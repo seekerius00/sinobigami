@@ -3,7 +3,9 @@
 <head>
 
     <!--
-    修正版: 判定値の全表示・最小値赤色表示、閲覧モードでの判定機能、不要ボタンの非表示
+    修正版v5:
+    1. ログイン画面の切替リンクを右寄せのボタンに変更
+    2. 判定値の表示形式を「2D6>=X （代用判定：YY）」等に変更
     -->
      
     <meta charset="UTF-8">
@@ -267,6 +269,25 @@
         /* 判定結果のスタイル */
         .judgment-result { font-size: 0.9em; margin-left: 10px; }
         
+        /* 認証画面のスタイル修正 (右寄せボタン化) */
+        .auth-container { max-width: 400px; margin: 4rem auto; text-align: center; }
+        .auth-toggle { 
+            margin-top: 1rem; 
+            color: #fff; 
+            cursor: pointer; 
+            display: table; /* 中身に合わせて伸縮 */
+            margin-left: auto; /* 右寄せ */
+            background-color: #6c757d; /* ボタン風の背景 */
+            padding: 0.5rem 1rem;
+            border-radius: 4px;
+            font-size: 0.9rem;
+            text-decoration: none;
+            transition: background 0.2s;
+        }
+        .auth-toggle:hover { background-color: #5a6268; }
+
+        .auth-note { text-align: left; font-size: 0.8rem; color: #ffaAAA; margin-bottom: 10px; }
+        
         .char-item { display: flex; background: var(--card-bg); border-radius: var(--radius); padding: 1rem; align-items: center; gap: 1rem; }
         .char-thumb { width: 120px; height: 120px; border-radius: 6px; object-fit: contain; }
         .char-info { flex-grow: 1; }
@@ -339,6 +360,7 @@
                     <button id="authActionBtn">ログイン</button>
                 </div>
             </div>
+            <!-- 切替ボタン (右寄せ・ボタン化) -->
             <div class="auth-toggle" id="authToggleBtn">アカウント作成はこちら</div>
         </div>
     </div>
@@ -908,8 +930,16 @@ function performJudgment(targetX, targetY, targetName) {
         const row = document.querySelector(`#row-${res.name} .judgment-result`);
         if (row) {
             const targetVal = 5 + res.cost;
-            // 全てに値を表示
-            row.textContent = `2D6>=${targetVal}`;
+            
+            // 表示テキストの組み立て（修正点）
+            let text = `2D6>=${targetVal}`;
+            if (res.name === targetName) {
+                text += ` （判定：${targetName}）`;
+            } else {
+                text += ` （代用判定：${res.name}）`;
+            }
+            
+            row.textContent = text;
             
             // 最小値のみ赤色強調
             if (res.cost === minCost) {
