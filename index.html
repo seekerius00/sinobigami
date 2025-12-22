@@ -83,8 +83,7 @@
         }
 
         async function ensureAdminExists() {
-            //const adminUser = 'seekerius0017';
-            //const adminPass = '123456789';
+            
             try {
                 const q = query(collection(db, 'artifacts', appId, 'public', 'data', USERS_COL), where('username', '==', adminUser));
                 const snapshot = await getDocs(q);
