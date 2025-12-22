@@ -3,7 +3,9 @@
 <head>
 
     <!--
-    新たなコメント
+    修正版v5:
+    1. ログイン画面の切替リンクを右寄せのボタンに変更
+    2. 判定値の表示形式を「2D6>=X （代用判定：YY）」等に変更
     -->
      
     <meta charset="UTF-8">
@@ -18,7 +20,6 @@
 
         // =================================================================
         // 【重要】ここにあなたのFirebase設定情報を貼り付けてください
-        //  Firebaseコンソール > プロジェクトの設定 > 全般 > マイアプリ
         // =================================================================
         const firebaseConfig = {
             apiKey: "AIzaSyDITm-Xg2nxtVKEW2ojmnNCMmji8vPdneA",
@@ -31,10 +32,7 @@
         };
         // =================================================================
 
-        // アプリケーションID（データ保存場所の区別に利用。通常はこのままでOK）
         const appId = 'my-shinobigami-server';
-
-        // --- Firebase Initialization ---
         let app, auth, db;
         let dbUser = null;
         let firebaseReady = false;
@@ -45,11 +43,9 @@
         async function initApp() {
             updateStatus('connecting', 'サーバー接続中...');
             
-            // 設定未記入チェック
             if (firebaseConfig.apiKey === "ここにAPI_KEYを貼り付け") {
                 updateStatus('offline', '設定エラー');
-                alert("【設定が必要です】\nコードの18行目にある firebaseConfig を、\nあなたのFirebaseプロジェクトの情報に書き換えてください。");
-                document.getElementById('loadingOverlay').innerHTML = '<div>Firebase設定が必要です</div><div style="font-size:0.8rem;margin-top:10px;">コードエディタで firebaseConfig を編集してください</div>';
+                alert("Firebase設定が必要です。コードを確認してください。");
                 return;
             }
 
@@ -58,15 +54,13 @@
                 auth = getAuth(app);
                 db = getFirestore(app);
 
-                // 匿名認証（サーバーへの接続許可）
                 await signInAnonymously(auth);
-                
                 await ensureAdminExists();
+                
                 firebaseReady = true;
                 updateStatus('online', 'サーバー接続完了 (Online)');
                 document.getElementById('loadingOverlay').style.display = 'none';
                 
-                // 以前のユーザー名を復元
                 const lastUser = localStorage.getItem('last_username');
                 if(lastUser) document.getElementById('authUsername').value = lastUser;
 
@@ -75,7 +69,7 @@
             } catch (error) {
                 console.error("Firebase Init Error:", error);
                 updateStatus('offline', '接続エラー');
-                alert("データベース接続エラーが発生しました。\n設定情報が正しいか確認してください。\n\n" + error.message);
+                alert("データベース接続エラー: " + error.message);
             }
         }
         
@@ -88,12 +82,10 @@
             }
         }
 
-        // --- Admin Setup ---
         async function ensureAdminExists() {
             const adminUser = 'seekerius0017';
             const adminPass = '123456789';
             try {
-                // public/data コレクションを使用
                 const q = query(collection(db, 'artifacts', appId, 'public', 'data', USERS_COL), where('username', '==', adminUser));
                 const snapshot = await getDocs(q);
                 if (snapshot.empty) {
@@ -103,14 +95,10 @@
                         role: 'admin',
                         createdAt: Date.now()
                     });
-                    console.log("Admin account initialized.");
                 }
-            } catch (e) { 
-                console.warn("Admin check failed (Check Firestore Rules):", e); 
-            }
+            } catch (e) { console.warn("Admin check failed:", e); }
         }
 
-        // --- Routing & Auth Check ---
         function checkAuth() {
             const hash = window.location.hash.substring(1).split('?')[0];
             if (hash === 'view') return;
@@ -121,7 +109,6 @@
         }
         window.addEventListener('hashchange', checkAuth);
 
-        // --- User Operations ---
         window.app_register = async (username, password) => {
             if (!firebaseReady) return alert("サーバー接続中...");
             if (password.length < 6) return { success: false, message: "パスワードは6文字以上で設定してください。" };
@@ -138,10 +125,7 @@
                     createdAt: Date.now() 
                 });
                 return { success: true };
-            } catch (e) { 
-                console.error(e);
-                return { success: false, message: "サーバーエラー: " + e.message }; 
-            }
+            } catch (e) { return { success: false, message: "エラー: " + e.message }; }
         };
 
         window.app_login = async (username, password) => {
@@ -162,10 +146,7 @@
                 localStorage.setItem('last_username', username);
                 
                 return { success: true, role: userData.role };
-            } catch (e) { 
-                console.error(e);
-                return { success: false, message: "ログインエラー" }; 
-            }
+            } catch (e) { return { success: false, message: "ログインエラー" }; }
         };
         
         window.app_logout = () => {
@@ -174,7 +155,6 @@
             window.location.hash = '#login';
         };
 
-        // --- Character Operations ---
         window.app_loadCharacters = async () => {
             if (!dbUser) return [];
             try {
@@ -182,10 +162,7 @@
                 const q = query(colRef, where('owner', '==', dbUser.username));
                 const snapshot = await getDocs(q);
                 return snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-            } catch (e) { 
-                console.error(e);
-                return []; 
-            }
+            } catch (e) { return []; }
         };
 
         window.app_saveCharacter = async (charId, data) => {
@@ -220,7 +197,6 @@
              try { await deleteDoc(doc(db, 'artifacts', appId, 'public', 'data', CHARS_COL, charId)); } catch(e) { throw e; }
         };
         
-        // --- Admin Operations ---
         window.app_admin_getUsers = async () => {
             if (!dbUser || dbUser.role !== 'admin') return [];
             const snapshot = await getDocs(collection(db, 'artifacts', appId, 'public', 'data', USERS_COL));
@@ -235,7 +211,6 @@
              await deleteDoc(doc(db, 'artifacts', appId, 'public', 'data', USERS_COL, docId));
         };
 
-        // Start App
         initApp();
     </script>
     
@@ -243,7 +218,6 @@
         :root { --bg: #212529; --card-bg: #343a40; --accent: #c02d47; --text: #f8f9fa; --border: #495057; --radius: 12px; --gap-closed: #000000; }
         body { font-family: "Hiragino Sans", "Noto Sans JP", sans-serif; background: var(--bg); color: var(--text); margin: 0; padding: 0; }
         
-        /* Server Status Indicator */
         .status-bar { position: fixed; top: 0; left: 0; padding: 4px 10px; font-size: 0.7rem; z-index: 10000; display: flex; align-items: center; gap: 6px; background: rgba(0,0,0,0.5); border-bottom-right-radius: 8px; backdrop-filter: blur(4px); }
         .status-indicator { width: 8px; height: 8px; border-radius: 50%; background: #808080; }
         .status-indicator.connecting { background: #ffc107; box-shadow: 0 0 5px #ffc107; }
@@ -276,13 +250,8 @@
         .input-group-text { background: #212529; border: 1px solid #6c757d; padding: 0.5rem 0.75rem; border-radius: 6px 0 0 6px; font-weight: 600; color: #ced4da; white-space: nowrap; display: flex; align-items: center;}
         .input-group input, .input-group select { border-radius: 0 6px 6px 0; }
         
-        /* Password Toggle */
         .password-wrapper { position: relative; width: 100%; }
-        .password-toggle { 
-            position: absolute; right: 10px; top: 50%; transform: translateY(-50%); 
-            cursor: pointer; width: 20px; height: 20px; z-index: 10; opacity: 0.7; 
-            display: flex; align-items: center; justify-content: center;
-        }
+        .password-toggle { position: absolute; right: 10px; top: 50%; transform: translateY(-50%); cursor: pointer; width: 20px; height: 20px; z-index: 10; opacity: 0.7; display: flex; align-items: center; justify-content: center; }
         .password-toggle:hover { opacity: 1; }
         .password-toggle svg { fill: #f8f9fa; width: 100%; height: 100%; }
 
@@ -296,9 +265,27 @@
         .gap-closed { background-color: #000 !important; }
         #skillGridBody td.selected { background-color: #ffee7c; color: #333; font-weight: bold; }
         #skillGridBody td.judging { background-color: #6c757d; font-weight: bold; }
-
+        
+        /* 判定結果のスタイル */
+        .judgment-result { font-size: 0.9em; margin-left: 10px; }
+        
+        /* 認証画面のスタイル修正 (右寄せボタン化) */
         .auth-container { max-width: 400px; margin: 4rem auto; text-align: center; }
-        .auth-toggle { margin-top: 1rem; color: #adb5bd; text-decoration: underline; cursor: pointer; }
+        .auth-toggle { 
+            margin-top: 1rem; 
+            color: #fff; 
+            cursor: pointer; 
+            display: table; /* 中身に合わせて伸縮 */
+            margin-left: auto; /* 右寄せ */
+            background-color: #6c757d; /* ボタン風の背景 */
+            padding: 0.5rem 1rem;
+            border-radius: 4px;
+            font-size: 0.9rem;
+            text-decoration: none;
+            transition: background 0.2s;
+        }
+        .auth-toggle:hover { background-color: #5a6268; }
+
         .auth-note { text-align: left; font-size: 0.8rem; color: #ffaAAA; margin-bottom: 10px; }
         
         .char-item { display: flex; background: var(--card-bg); border-radius: var(--radius); padding: 1rem; align-items: center; gap: 1rem; }
@@ -314,6 +301,9 @@
         
         .hidden { display: none !important; }
         #loadingOverlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: #212529; z-index: 9999; display: flex; justify-content: center; align-items: center; color: white; font-size: 1.5rem; flex-direction: column; gap: 10px; }
+
+        /* 閲覧モード時に .edit-only クラスを持つ要素を強制的に非表示にする */
+        body.view-mode .edit-only { display: none !important; }
 
         @media (max-width: 700px) {
             .col-4, .col-6 { flex: 0 0 100%; max-width: 100%; }
@@ -331,7 +321,6 @@
 
 <div id="loadingOverlay">
     <div>Server Connecting...</div>
-    <div style="font-size:0.8rem; color:#888;">Establishing connection to Firestore</div>
 </div>
 
 <!-- Header -->
@@ -359,24 +348,19 @@
                 <div class="col-12">
                     <div class="password-wrapper">
                         <input type="password" id="authPassword" placeholder="パスワード">
-                        <!-- Mild SVG Icon for Eye -->
                         <span class="password-toggle" id="authPassIcon" onclick="toggleAuthPassword()">
                             <svg viewBox="0 0 24 24"><path d="M12 4.5C7 4.5 2.73 7.61 1 12c1.73 4.39 6 7.5 11 7.5s9.27-3.11 11-7.5c-1.73-4.39-6-7.5-11-7.5zM12 17c-2.76 0-5-2.24-5-5s2.24-5 5-5 5 2.24 5 5-2.24 5-5 5zm0-8c-1.66 0-3 1.34-3 3s1.34 3 3 3 3-1.34 3-3-1.34-3-3-3z"/></svg>
                         </span>
                     </div>
                 </div>
-                <!-- Register Requirements (Updated) -->
                 <div id="regReq" class="col-12 hidden">
-                    <div class="auth-note">
-                        ※パスワード要件:<br>
-                        ・6文字以上<br>
-                        ・データはサーバーに保存されます
-                    </div>
+                    <div class="auth-note">※パスワード要件: 6文字以上</div>
                 </div>
                 <div class="col-12" style="margin-top:1rem;">
                     <button id="authActionBtn">ログイン</button>
                 </div>
             </div>
+            <!-- 切替ボタン (右寄せ・ボタン化) -->
             <div class="auth-toggle" id="authToggleBtn">アカウント作成はこちら</div>
         </div>
     </div>
@@ -385,7 +369,6 @@
     <div id="page-admin" class="hidden">
         <div class="card">
             <h2>管理者ダッシュボード</h2>
-            <p>登録ユーザー管理 (Database)</p>
             <table class="admin-table">
                 <thead><tr><th>ユーザー名</th><th>パスワード</th><th>操作</th></tr></thead>
                 <tbody id="adminUserListBody"></tbody>
@@ -398,7 +381,6 @@
         <div class="search-bar">
             <input type="text" id="searchInput" placeholder="キャラクター名で検索...">
         </div>
-        <!-- New Location for Create Button -->
         <div style="text-align: right; margin-bottom: 1rem;">
             <button id="createNewBtn">新規作成</button>
         </div>
@@ -453,7 +435,6 @@
                         <textarea name="memo" rows="3" placeholder="キャラクターメモ..."></textarea>
                     </div>
                     
-                    <!-- Image Area -->
                     <div class="form-col col-6 edit-only">
                         <div id="dropZone" class="drag-drop-area">
                             <div class="drag-icon">📁</div>
@@ -468,11 +449,10 @@
                         </div>
                     </div>
                     
-                    <!-- EDIT PASSWORD FIELD -->
                     <div class="form-col col-12 edit-only">
                         <div class="input-group">
                             <span class="input-group-text" style="background:#440000; color:#ffdddd;">編集パスワード</span>
-                            <input type="text" name="editPassword" placeholder="設定すると他者との共有時に使用できます（現在は所有者のみ編集可能）">
+                            <input type="text" name="editPassword" placeholder="設定すると他者との共有時に使用できます">
                         </div>
                     </div>
                 </div>
@@ -539,10 +519,9 @@
                 <button type="button" class="btn-add edit-only" onclick="addDynamicRow('tool')">+ 忍具追加</button>
             </div>
 
-            <!-- Secrets: Default Hidden -->
+            <!-- Secrets -->
             <div id="secretCard" class="card hidden">
                 <h2>奥義・秘密</h2>
-                
                 <div id="secretContent">
                     <h3>奥義</h3>
                     <div id="ougiContainer"></div>
@@ -575,7 +554,7 @@
 <div id="deleteModal" class="modal-overlay">
     <div class="modal">
         <h3>警告</h3>
-        <p>サーバーから完全に削除しますか？<br>この操作は取り消せません。</p>
+        <p>サーバーから完全に削除しますか？</p>
         <div class="modal-buttons">
             <button id="deleteConfirmBtn" class="btn-danger">はい、削除します</button>
             <button id="deleteCancelBtn" class="secondary">いいえ</button>
@@ -597,7 +576,7 @@ let currentMode = 'list';
 let gapStates = [false, false, false, false, false];
 let acquiredSkills = new Set();
 let isRegisterMode = false;
-let currentCharacterData = null; // Store for unlock check
+let currentCharacterData = null;
 
 // --- Init ---
 document.addEventListener('DOMContentLoaded', () => {
@@ -617,7 +596,7 @@ async function handleHashChange() {
     ['page-login', 'page-admin', 'page-list', 'page-form'].forEach(pid => document.getElementById(pid).classList.add('hidden'));
     
     const header = document.getElementById('appHeader');
-    document.getElementById('unlockSecretHeaderBtn').classList.add('hidden'); // Default hide
+    document.getElementById('unlockSecretHeaderBtn').classList.add('hidden'); 
 
     if (route === 'login') {
         header.classList.add('hidden');
@@ -664,7 +643,10 @@ async function handleHashChange() {
         setupFormForView(id);
     }
     
+    // Toggle Edit Mode Elements
     document.querySelectorAll('.edit-only').forEach(el => el.style.display = currentMode === 'edit' ? '' : 'none');
+    
+    // View Mode Readonly
     const form = document.getElementById('charForm');
     form.querySelectorAll('input, textarea, select').forEach(input => {
         if(input.id === 'searchInput' || input.id === 'unlockPassInput') return;
@@ -692,12 +674,9 @@ function toggleAuthPassword() {
     const isPass = input.type === "password";
     input.type = isPass ? "text" : "password";
     
-    // Toggle Icon (Eye / Eye Off)
     if (isPass) {
-        // Show Slash (Visible)
         icon.innerHTML = `<svg viewBox="0 0 24 24"><path d="M12 7c2.76 0 5 2.24 5 5 0 .65-.13 1.26-.36 1.83l2.92 2.92c1.51-1.26 2.7-2.89 3.43-4.75-1.73-4.39-6-7.5-11-7.5-1.4 0-2.74.25-3.98.7l2.16 2.16C10.74 7.13 11.35 7 12 7zM2 4.27l2.28 2.28.46.46C3.08 8.3 1.78 10.02 1 12c1.73 4.39 6 7.5 11 7.5 1.55 0 3.03-.3 4.38-.84l.42.42L19.73 22 21 20.73 3.27 3 2 4.27zM7.53 9.8l1.55 1.55c-.05.21-.08.43-.08.65 0 1.66 1.34 3 3 3 .22 0 .44-.03.65-.08l1.55 1.55c-.67.33-1.41.53-2.2.53-2.76 0-5-2.24-5-5 0-.79.2-1.53.53-2.2zm4.31-.78l3.15 3.15.02-.16c0-1.66-1.34-3-3-3l-.17.01z"/></svg>`;
     } else {
-        // Show Eye (Hidden)
         icon.innerHTML = `<svg viewBox="0 0 24 24"><path d="M12 4.5C7 4.5 2.73 7.61 1 12c1.73 4.39 6 7.5 11 7.5s9.27-3.11 11-7.5c-1.73-4.39-6-7.5-11-7.5zM12 17c-2.76 0-5-2.24-5-5s2.24-5 5-5 5 2.24 5 5-2.24 5-5 5zm0-8c-1.66 0-3 1.34-3 3s1.34 3 3 3 3-1.34 3-3-1.34-3-3-3z"/></svg>`;
     }
 }
@@ -732,8 +711,7 @@ document.getElementById('unlockConfirmBtn').addEventListener('click', () => {
     const input = document.getElementById('unlockPassInput').value;
     if (currentCharacterData && input === currentCharacterData.editPassword) {
         document.getElementById('secretCard').classList.remove('hidden');
-        document.getElementById('unlockSecretHeaderBtn').classList.add('hidden'); // Hide key once unlocked
-        // Also render Ougi if it was cleared
+        document.getElementById('unlockSecretHeaderBtn').classList.add('hidden'); 
         renderDynamicTable('ougi', currentCharacterData.ougi || []);
         document.getElementById('passwordModal').style.display = 'none';
         showToast("ロックを解除しました");
@@ -794,7 +772,7 @@ function resetForm() {
     document.getElementById('charImage').style.display = "none";
     document.getElementById('deleteImageBtn').style.display = "none";
     document.getElementById('acquiredSkillsList').innerHTML = "";
-    document.getElementById('secretCard').classList.remove('hidden'); // Show for edit mode default
+    document.getElementById('secretCard').classList.remove('hidden'); 
     acquiredSkills.clear();
     gapStates = [false, false, false, false, false];
     document.querySelector('input[name="mode"][value="setting"]').checked = true;
@@ -810,18 +788,15 @@ async function loadCharacterData(id) {
     }
     currentCharacterData = data;
     
-    // Visibility Logic
     const isOwner = window.currentUser && (window.currentUser.username === data.owner);
     const isAdmin = window.currentUser && (window.currentUser.role === 'admin');
     const canSeeSecrets = isOwner || isAdmin;
     
-    // Default: Show secret card only if authorized. If not, hide it and show unlock button.
     if (canSeeSecrets || currentMode === 'edit') {
         document.getElementById('secretCard').classList.remove('hidden');
         document.getElementById('unlockSecretHeaderBtn').classList.add('hidden');
     } else {
         document.getElementById('secretCard').classList.add('hidden');
-        // Only show unlock button if there is actually a password to enter
         if (data.editPassword) {
             document.getElementById('unlockSecretHeaderBtn').classList.remove('hidden');
         } else {
@@ -852,10 +827,9 @@ async function loadCharacterData(id) {
         });
     }
     
-    // Safe Rendering
     Object.keys(DYNAMIC_SCHEMAS).forEach(key => {
         if (key === 'ougi' && !canSeeSecrets && currentMode !== 'edit') {
-            document.getElementById('ougiContainer').innerHTML = ''; // Clear for safety
+            document.getElementById('ougiContainer').innerHTML = ''; 
         } else {
             renderDynamicTable(key, data[key] || []);
         }
@@ -900,10 +874,85 @@ document.getElementById('deleteImageBtn').addEventListener('click', () => { docu
 // Helpers
 function createSkillGrid(){const b=document.getElementById('skillGridBody'),h=document.querySelector('#skillGrid thead tr');b.innerHTML='';h.querySelectorAll('.spacer-col-header').forEach(th=>{const i=parseInt(th.dataset.gap);th.classList.toggle('gap-closed',gapStates[i]);th.onclick=()=>toggleGap(i)});for(let i=0;i<11;i++){const r=document.createElement('tr');for(let j=0;j<6;j++){const d=document.createElement('td'),s=SKILL_GRID_DATA[i][j];d.textContent=s;d.dataset.skill=s;d.dataset.y=i;d.dataset.x=j;if(acquiredSkills.has(s))d.classList.add('selected');d.onclick=(e)=>handleSkillClick(e.target);r.appendChild(d);if(j<5){const sp=document.createElement('td');sp.className='spacer-col';if(gapStates[j])sp.classList.add('gap-closed');r.appendChild(sp)}}b.appendChild(r)}}
 function toggleGap(i){if(currentMode!=='edit')return;gapStates[i]=!gapStates[i];createSkillGrid()}
-function handleSkillClick(c){const s=c.dataset.skill;if(document.querySelector('input[name="mode"]:checked').value==='setting'){if(currentMode!=='edit')return;if(acquiredSkills.has(s)){acquiredSkills.delete(s);c.classList.remove('selected');removeSkillFromList(s)}else{acquiredSkills.add(s);c.classList.add('selected');addSkillToList(s)}}else{performJudgment(parseInt(c.dataset.x),parseInt(c.dataset.y),s)}}
-function addSkillToList(s){const l=document.getElementById('acquiredSkillsList');if(document.getElementById('row-'+s))return;const t=document.createElement('tr');t.id='row-'+s;t.innerHTML=`<td style="display:flex; justify-content:space-between;"><span>${s}</span><span class="judgment-result" style="font-weight:bold; color:var(--accent);"></span></td>`;l.appendChild(t)}
+
+function handleSkillClick(c){
+    const s=c.dataset.skill;
+    // 閲覧モードでも判定を行うように条件変更
+    if(document.querySelector('input[name="mode"]:checked').value==='setting' && currentMode === 'edit'){
+        if(acquiredSkills.has(s)){acquiredSkills.delete(s);c.classList.remove('selected');removeSkillFromList(s)}
+        else{acquiredSkills.add(s);c.classList.add('selected');addSkillToList(s)}
+    } else {
+        // 判定ロジック (閲覧時もここを通る)
+        performJudgment(parseInt(c.dataset.x),parseInt(c.dataset.y),s);
+    }
+}
+
+function addSkillToList(s){const l=document.getElementById('acquiredSkillsList');if(document.getElementById('row-'+s))return;const t=document.createElement('tr');t.id='row-'+s;t.innerHTML=`<td style="display:flex; justify-content:space-between;"><span>${s}</span><span class="judgment-result"></span></td>`;l.appendChild(t)}
 function removeSkillFromList(s){const r=document.getElementById('row-'+s);if(r)r.remove()}
-function performJudgment(tx,ty,tn){document.querySelectorAll('.judging').forEach(e=>e.classList.remove('judging'));document.querySelectorAll('.judgment-result').forEach(e=>e.textContent='');const tc=document.querySelector(`td[data-skill="${tn}"]`);if(tc)tc.classList.add('judging');if(acquiredSkills.size===0)return;let min=Infinity,best=null;acquiredSkills.forEach(sn=>{const sc=document.querySelector(`td[data-skill="${sn}"]`);if(!sc)return;const sx=parseInt(sc.dataset.x),sy=parseInt(sc.dataset.y),dy=Math.abs(ty-sy);let dx=0,st=Math.min(tx,sx),en=Math.max(tx,sx);for(let k=st;k<en;k++){dx+=1;if(!gapStates[k])dx+=1}const tot=dy+dx;if(tot<min){min=tot;best=sn}});const val=5+min;if(best){document.querySelector(`#row-${best} .judgment-result`).textContent=best===tn?`2D6>=${val} (判定:${tn})`:`2D6>=${val} (代用:${best})`}}
+
+// 修正された判定ロジック: 全習得特技に対して計算し、最小値のみ赤色表示
+function performJudgment(targetX, targetY, targetName) {
+    document.querySelectorAll('.judging').forEach(e=>e.classList.remove('judging'));
+    document.querySelectorAll('.judgment-result').forEach(e=> { e.textContent=''; e.style.color=''; e.style.fontWeight=''; });
+
+    const targetCell = document.querySelector(`td[data-skill="${targetName}"]`);
+    if(targetCell) targetCell.classList.add('judging');
+
+    if (acquiredSkills.size === 0) return;
+
+    let minCost = Infinity;
+    const results = [];
+
+    acquiredSkills.forEach(sourceName => {
+        const sourceCell = document.querySelector(`td[data-skill="${sourceName}"]`);
+        if (!sourceCell) return;
+        
+        const sx = parseInt(sourceCell.dataset.x);
+        const sy = parseInt(sourceCell.dataset.y);
+        
+        const distY = Math.abs(targetY - sy);
+        let distX = 0;
+        const startX = Math.min(targetX, sx);
+        const endX = Math.max(targetX, sx);
+        
+        for (let k = startX; k < endX; k++) {
+            distX += 1; 
+            if (!gapStates[k]) distX += 1; 
+        }
+        
+        const totalCost = distY + distX;
+        if (totalCost < minCost) minCost = totalCost;
+        
+        results.push({ name: sourceName, cost: totalCost });
+    });
+
+    results.forEach(res => {
+        const row = document.querySelector(`#row-${res.name} .judgment-result`);
+        if (row) {
+            const targetVal = 5 + res.cost;
+            
+            // 表示テキストの組み立て（修正点）
+            let text = `2D6>=${targetVal}`;
+            if (res.name === targetName) {
+                text += ` （判定：${targetName}）`;
+            } else {
+                text += ` （${targetName} 代用判定：${res.name}）`;
+            }
+            
+            row.textContent = text;
+            
+            // 最小値のみ赤色強調
+            if (res.cost === minCost) {
+                row.style.color = '#ff4444'; 
+                row.style.fontWeight = 'bold';
+            } else {
+                row.style.color = '#888';
+                row.style.fontWeight = 'normal';
+            }
+        }
+    });
+}
+
 function renderDynamicTable(t,d){const c=document.getElementById(t+'Container');let h=`<div class="dynamic-table-container"><table><tbody id="tbody-${t}">`;d.forEach((r,i)=>h+=createRowHTML(t,r,i));h+=`</tbody></table></div>`;c.innerHTML=h}
 function createRowHTML(t,r={},i){const s=DYNAMIC_SCHEMAS[t];let h=`<tr class="dynamic-row" data-idx="${i}">`;s.forEach(f=>{const v=r[f.key]||'';h+=`<td width="${f.width}">`;if(f.key==='effect'){h+=`<textarea class="dyn-input" data-key="${f.key}" placeholder="${f.placeholder}" rows="2">${v}</textarea>`}else if(f.type==='checkbox'){const k=r[f.key]==='true'?'checked':'';h+=`<label style="font-size:0.8rem; cursor:pointer;"><input type="checkbox" class="dyn-input" data-key="${f.key}" ${k}><br>${f.placeholder}</label>`}else if(f.options){let o=f.options;if(f.key==='emotion'){const ct=r['emotion_type']||'+';o=EMOTIONS[ct]}const oc=f.onchange?`onchange="${f.onchange}"`:'';h+=`<select class="dyn-input" data-key="${f.key}" ${oc}>`;o.forEach(op=>{const sl=v===op?'selected':'';h+=`<option value="${op}" ${sl}>${op}</option>`});h+=`</select>`}else{h+=`<input type="text" class="dyn-input" data-key="${f.key}" value="${v}" placeholder="${f.placeholder}">`}h+=`</td>`});h+=`<td width="5%" class="edit-only"><button type="button" class="btn-sm btn-danger" onclick="this.closest('tr').remove()">×</button></td></tr>`;return h}
 window.addDynamicRow=t=>{const b=document.getElementById(`tbody-${t}`);b.insertAdjacentHTML('beforeend',createRowHTML(t,{},b.children.length))};
