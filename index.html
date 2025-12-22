@@ -83,8 +83,8 @@
         }
 
         async function ensureAdminExists() {
-            const adminUser = 'seekerius0017';
-            const adminPass = '123456789';
+            //const adminUser = 'seekerius0017';
+            //const adminPass = '123456789';
             try {
                 const q = query(collection(db, 'artifacts', appId, 'public', 'data', USERS_COL), where('username', '==', adminUser));
                 const snapshot = await getDocs(q);
@@ -109,7 +109,7 @@
         }
         window.addEventListener('hashchange', checkAuth);
 
-        window.app_register = async (username, password) => {
+        window.app_rcreateUserWithEmailAndPasswordegister = async (username, password) => {
             if (!firebaseReady) return alert("サーバー接続中...");
             if (password.length < 6) return { success: false, message: "パスワードは6文字以上で設定してください。" };
             try {
@@ -128,7 +128,7 @@
             } catch (e) { return { success: false, message: "エラー: " + e.message }; }
         };
 
-        window.app_login = async (username, password) => {
+        window.signInWithEmailAndPassword = async (username, password) => {
             if (!firebaseReady) return alert("サーバー接続中...");
             try {
                 const usersRef = collection(db, 'artifacts', appId, 'public', 'data', USERS_COL);
@@ -687,14 +687,14 @@ document.getElementById('authActionBtn').addEventListener('click', async () => {
     const p = document.getElementById('authPassword').value.trim();
     if (!u || !p) return showToast("ユーザー名とパスワードを入力してください");
     if (isRegisterMode) {
-        const res = await window.app_register(u, p);
+        const res = await window.createUserWithEmailAndPassword(u, p);
         if (res.success) {
             showToast("登録しました。ログインします...");
-            const loginRes = await window.app_login(u, p);
+            const loginRes = await window.signInWithEmailAndPassword(u, p);
             if (loginRes.success) window.location.hash = '#list';
         } else { showToast(res.message); }
     } else {
-        const res = await window.app_login(u, p);
+        const res = await window.signInWithEmailAndPassword(u, p);
         if (res.success) window.location.hash = res.role === 'admin' ? '#admin' : '#list';
         else showToast(res.message);
     }
