@@ -1053,7 +1053,7 @@
     <!-- Palette Modal -->
     <div id="paletteModal" class="modal-overlay">
         <div class="palette-modal-content">
-            <h3 class="color-palette-header">チャパレ生成ツール</h3>
+            <h3 class="color-palette-header">チャパレ生成</h3>
             <p>現在表示中のキャラクターシートからCCFOLIAなどで利用で<br>きるチャットパレットを生成します</p>
             <h2 id="paletteCharName" style="margin: 1rem 0; color: #333;"></h2>
             <textarea id="paletteText" class="palette-textarea" readonly></textarea>
@@ -1254,7 +1254,7 @@
                 <button onclick="location.hash='#edit?id=${char.id}'">編集</button>
                 <button onclick="location.hash='#view?id=${char.id}'" class="secondary">閲覧</button>
                 <button onclick="copyCharacter('${char.id}')" class="secondary">コピー</button>
-                <button onclick="openPalette('${char.id}')" class="secondary">パレット</button>
+                <button onclick="openPalette('${char.id}')" class="secondary">チャットパレット</button>
                 <button onclick="confirmDelete('${char.id}')" class="btn-danger">削除</button>
             </div>
         `;
