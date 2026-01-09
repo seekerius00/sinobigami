@@ -312,6 +312,88 @@
             padding-bottom: 4rem;
         }
 
+        /* Palette Modal Styles */
+        .color-palette-header {
+            font-size: 1.5rem;
+            font-weight: bold;
+            margin-bottom: 1rem;
+            color: #333;
+        }
+
+        .palette-modal-content {
+            background-color: #f8f9fa;
+            color: #333;
+            max-width: 600px;
+            width: 95%;
+            border-radius: 12px;
+            padding: 2rem;
+            text-align: center;
+        }
+
+        .palette-textarea {
+            width: 100%;
+            height: 300px;
+            margin: 1rem 0;
+            padding: 0.5rem;
+            border-radius: 6px;
+            border: 1px solid #ccc;
+            font-family: monospace;
+            resize: none;
+            background: #fff;
+            color: #000;
+        }
+
+        .palette-actions {
+            display: flex;
+            justify-content: center;
+            gap: 1rem;
+            margin-top: 1rem;
+        }
+
+        .btn-copy {
+            background-color: #6c757d;
+            color: white;
+            border-radius: 20px;
+            padding: 0.5rem 1.5rem;
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+
+        .btn-dl {
+            background-color: #a8e6cf;
+            color: #3b7a57;
+            border-radius: 20px;
+            padding: 0.5rem 1.5rem;
+            font-weight: bold;
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+
+        .btn-koma {
+            background-color: #d1d8e0;
+            color: #4b6584;
+            border-radius: 20px;
+            padding: 0.5rem 1.5rem;
+            font-weight: bold;
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+
+        /* Changed color to better match image */
+        .btn-koma-blue {
+            background-color: #a2c2e0;
+            color: #1e3799;
+            border-radius: 20px;
+            padding: 0.5rem 1.5rem;
+            font-weight: bold;
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+
         .card {
             background: var(--card-bg);
             border-radius: var(--radius);
@@ -968,6 +1050,25 @@
         </div>
     </div>
 
+    <!-- Palette Modal -->
+    <div id="paletteModal" class="modal-overlay">
+        <div class="palette-modal-content">
+            <h3 class="color-palette-header">チャパレ生成ツール</h3>
+            <p>現在表示中のキャラクターシートからCCFOLIAなどで利用で<br>きるチャットパレットを生成します</p>
+            <h2 id="paletteCharName" style="margin: 1rem 0; color: #333;"></h2>
+            <textarea id="paletteText" class="palette-textarea" readonly></textarea>
+            <div class="palette-actions">
+                <button id="paletteCopyBtn" class="btn-copy">📋 コピー</button>
+                <button id="paletteDlBtn" class="btn-dl">📥 DL</button>
+                <button id="paletteKomaBtn" class="btn-koma-blue">👤 コマ出力</button>
+            </div>
+            <div style="margin-top: 1rem;">
+                <button onclick="document.getElementById('paletteModal').style.display='none'"
+                    class="secondary">閉じる</button>
+            </div>
+        </div>
+    </div>
+
     <div id="toastNotification" class="toast-notification">メッセージ</div>
 
     <script>
@@ -1153,6 +1254,7 @@
                 <button onclick="location.hash='#edit?id=${char.id}'">編集</button>
                 <button onclick="location.hash='#view?id=${char.id}'" class="secondary">閲覧</button>
                 <button onclick="copyCharacter('${char.id}')" class="secondary">コピー</button>
+                <button onclick="openPalette('${char.id}')" class="secondary">パレット</button>
                 <button onclick="confirmDelete('${char.id}')" class="btn-danger">削除</button>
             </div>
         `;
@@ -1307,6 +1409,215 @@
         });
         document.getElementById('deleteCancelBtn').addEventListener('click', () => document.getElementById('deleteModal').style.display = 'none');
         document.getElementById('deleteImageBtn').addEventListener('click', () => { document.getElementById('charImage').src = ""; document.getElementById('charImage').style.display = 'none'; document.getElementById('imgInput').value = ""; document.getElementById('deleteImageBtn').style.display = 'none'; });
+
+        // Palette Logic
+        window.openPalette = async (charId) => {
+            try {
+                const data = await window.app_getCharacter(charId);
+                if (!data) return showToast("データが見つかりません");
+
+                document.getElementById('paletteCharName').textContent = data.name || '名称未設定';
+                const text = generatePaletteText(data);
+                document.getElementById('paletteText').value = text;
+                document.getElementById('paletteModal').style.display = 'flex';
+            } catch (e) {
+                console.error(e);
+                showToast("生成エラー");
+            }
+        };
+
+        function generatePaletteText(data) {
+            let text = `キャラクター名: ${data.name || ''}\n\n`;
+            text += `＠忍法\n＠判定\n\n`;
+
+            // --- Ninpo ---
+            text += `───忍法───\n`;
+            const ninpo = data.ninpo || [];
+            ninpo.forEach((n, idx) => {
+                const charCode = String.fromCharCode(97 + idx); // a, b, c...
+                text += `【${n.name || ''}】　${n.type || ''}　特技:《${n.designated_skill || 'なし'}》　間合:${n.gap || ''}　コスト:${n.cost || ''}　効果:${n.effect || ''}　ページ:${n.page || ''}　＠忍法 @n @${charCode}\n`;
+                if (n.designated_skill && n.designated_skill !== 'なし') {
+                    // Check if designated skill is acquired
+                    const skillName = n.designated_skill;
+                    const acquired = data.skills ? data.skills.includes(skillName) : false;
+                    let tn = 5;
+                    // Note: Calculating correct TN for ninpo requires full skill logic. 
+                    // Reuse calculateSkillTN logic if possible, or simplified check.
+                    // For now, let's use the robust calculation.
+                    const skillRes = calculateSkillTN(skillName, new Set(data.skills || []), data.gapStates || [false, false, false, false, false]);
+                    if (skillRes) {
+                        if (skillRes.source === skillName) {
+                            text += `SG@12#2+0>=${skillRes.tn} (判定：＠${skillName})：${n.name} ＠判定 @h @${charCode}\n\n`;
+                        } else {
+                            text += `SG@12#2+0>=${skillRes.tn} (代用判定：${skillRes.source}、指定特技：＠${skillName})：${n.name} ＠判定 @h @${charCode}\n\n`;
+                        }
+                    } else {
+                        // Default fallback if skill not found in grid (e.g. custom name)
+                        text += `SG@12#2+0>=5 (判定：＠${skillName})：${n.name} ＠判定 @h @${charCode}\n\n`;
+                    }
+                } else {
+                    text += `\n`;
+                }
+            });
+
+            // --- Skills by Category ---
+            const SKILL_GRID_DATA = [['絡繰術', '騎乗術', '生存術', '医術', '兵糧術', '異形化'], ['火術', '砲術', '潜伏術', '毒術', '鳥獣術', '召喚術'], ['水術', '手裏剣術', '遁走術', '罠術', '野戦術', '死霊術'], ['針術', '手練', '隠蔽術', '調査術', '地の利', '結界術'], ['仕込み', '身体操術', '隠形術', '詐術', '意気', '封術'], ['衣装術', '歩法', '隠密術', '対人術', '用兵術', '言霊術'], ['縄術', '走法', '変装術', '遊芸', '記憶術', '幻術'], ['登術', '飛術', '香術', '九ノ一の術', '見敵術', '瞳術'], ['拷問術', '骨法術', '分身の術', '傀儡の術', '暗号術', '千里眼の術'], ['鍵術', '刀術', '隠語術', '流言の術', '伝達術', '憑依術'], ['掘削術', '怪力', '第六感', '経済力', '人脈', '呪術']];
+            const categories = ['器術', '体術', '忍術', '謀術', '戦術', '妖術'];
+
+            const acquiredSet = new Set(data.skills || []);
+            const gaps = data.gapStates || [false, false, false, false, false];
+
+            categories.forEach((cat, colIdx) => {
+                text += `【${cat}分野】───\n`;
+                // Iterate through all 11 rows for this column
+                for (let row = 0; row < 11; row++) {
+                    const skillName = SKILL_GRID_DATA[row][colIdx];
+                    const res = calculateSkillTN(skillName, acquiredSet, gaps);
+                    if (res) {
+                        if (res.source === skillName) {
+                            text += `SG@12#2+0>=${res.tn} (判定：＠${skillName})\n`;
+                        } else {
+                            // SG@12#2+0>=[TN] (代用判定：[Source], 指定特技：＠[Target])
+                            text += `SG@12#2+0>=${res.tn} (代用判定：${res.source}、指定特技：＠${skillName})\n`;
+                        }
+                    }
+                }
+                text += `\n`;
+            });
+
+            // --- Curse / Paralysis ---
+            text += `───呪い・マヒ───\n`;
+            // Simplified: list all acquired skills for now, split by ninpo/skill if possible but data structure mixes them not easily?
+            // Actually ninpo names are in data.ninpo
+            const ninpoNames = (data.ninpo || []).map(n => n.name).filter(n => n);
+            if (ninpoNames.length) {
+                text += `choice[${ninpoNames.join(',')}] ＠呪い忍法ランダム選択\n\n`;
+            }
+            // All acquired skills for paralysis
+            if (data.skills && data.skills.length) {
+                text += `choice[${data.skills.join(',')}] ＠マヒ特技ランダム選択\n`;
+            }
+
+            // --- Fixed Footer ---
+            text += `
+2D6
+D66
+ノ
+ヘ
+choice[a,b,c]
+感情修正　[対象] → [感情]+
+感情修正　[対象] → [感情]-
+
+─── 手番開始 ───
+
+─── 手番終了 ───
+
+───ランダム特技決定表───
+RTT　【ランダム特技】
+RTT1　【ランダム特技(1/器術)】
+RTT2　【ランダム特技(2/体術)】
+RTT3　【ランダム特技(3/忍術)】
+RTT4　【ランダム特技(4/謀術)】
+RTT5　【ランダム特技(5/戦術)】
+RTT6　【ランダム特技(6/妖術)】
+RCT　【ランダム分野表】
+
+───ダメージ算出───
+x1 RCT　【接近戦ダメージ1点】
+x2 RCT　【接近戦ダメージ2点】
+x3 RCT　【接近戦ダメージ3点】
+x4 RCT　【接近戦ダメージ4点】
+x1 WT　【集団戦ダメージ1点(通常)】
+x2 WT　【集団戦ダメージ2点(通常)】
+x3 WT　【集団戦ダメージ3点(通常)】
+x1 GWT　【集団戦ダメージ1点(戦国)】
+x2 GWT　【集団戦ダメージ2点(戦国)】
+x3 GWT　【集団戦ダメージ3点(戦国)】
+
+───各種表───
+ET　【感情表】
+ST　【シーン表】
+FT　【ファンブル表】
+WT　【変調表】
+GWT　【戦国変調表】
+BT　【戦場表】
+BNT　【新戦場表】
+MT　【妖魔化(異形表、妖魔忍法表一括)】
+NMT　【妖魔化(新異形表利用)】
+YWT　【妖術変調対応表(現代／戦国)】
+OTS　【数奇】
+`;
+            return text;
+        }
+
+        // Helper: Calculate Target Number logic reuse
+        function calculateSkillTN(targetName, acquiredSet, gapStates) {
+            // Find target coords
+            let tx = -1, ty = -1;
+            const SKILL_GRID_DATA = [['絡繰術', '騎乗術', '生存術', '医術', '兵糧術', '異形化'], ['火術', '砲術', '潜伏術', '毒術', '鳥獣術', '召喚術'], ['水術', '手裏剣術', '遁走術', '罠術', '野戦術', '死霊術'], ['針術', '手練', '隠蔽術', '調査術', '地の利', '結界術'], ['仕込み', '身体操術', '隠形術', '詐術', '意気', '封術'], ['衣装術', '歩法', '隠密術', '対人術', '用兵術', '言霊術'], ['縄術', '走法', '変装術', '遊芸', '記憶術', '幻術'], ['登術', '飛術', '香術', '九ノ一の術', '見敵術', '瞳術'], ['拷問術', '骨法術', '分身の術', '傀儡の術', '暗号術', '千里眼の術'], ['鍵術', '刀術', '隠語術', '流言の術', '伝達術', '憑依術'], ['掘削術', '怪力', '第六感', '経済力', '人脈', '呪術']];
+            for (let y = 0; y < 11; y++) {
+                for (let x = 0; x < 6; x++) {
+                    if (SKILL_GRID_DATA[y][x] === targetName) { tx = x; ty = y; break; }
+                }
+                if (tx !== -1) break;
+            }
+            if (tx === -1) return null; // Skill not found
+
+            if (acquiredSet.has(targetName)) return { tn: 5, source: targetName };
+            if (acquiredSet.size === 0) return { tn: 12, source: 'なし' }; // No skills
+
+            let minCost = Infinity;
+            let bestSource = null;
+
+            acquiredSet.forEach(sourceName => {
+                let sx = -1, sy = -1;
+                for (let y = 0; y < 11; y++) {
+                    for (let x = 0; x < 6; x++) {
+                        if (SKILL_GRID_DATA[y][x] === sourceName) { sx = x; sy = y; break; }
+                    }
+                    if (sx !== -1) break;
+                }
+                if (sx === -1) return;
+
+                const distY = Math.abs(ty - sy);
+                let distX = 0;
+                const startX = Math.min(tx, sx);
+                const endX = Math.min(Math.max(tx, sx), 5); // Ensure within bounds
+
+                // Count gaps
+                for (let k = startX; k < Math.max(tx, sx); k++) {
+                    distX += 1;
+                    if (!gapStates[k]) distX += 1;
+                }
+                const totalCost = distY + distX;
+                if (totalCost < minCost) {
+                    minCost = totalCost;
+                    bestSource = sourceName;
+                }
+            });
+
+            return { tn: 5 + minCost, source: bestSource };
+        }
+
+        // Modal Event Listeners
+        document.getElementById('paletteCopyBtn').addEventListener('click', async () => {
+            const text = document.getElementById('paletteText').value;
+            await navigator.clipboard.writeText(text);
+            showToast("クリップボードにコピーしました");
+        });
+        document.getElementById('paletteDlBtn').addEventListener('click', () => {
+            const text = document.getElementById('paletteText').value;
+            const blob = new Blob([text], { type: 'text/plain' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = (document.getElementById('paletteCharName').textContent || 'character') + '.txt';
+            a.click();
+            URL.revokeObjectURL(url);
+        });
+        document.getElementById('paletteKomaBtn').addEventListener('click', () => {
+            showToast("設定のみ (未実装)");
+        });
 
         // Helpers
         function createSkillGrid() { const b = document.getElementById('skillGridBody'), h = document.querySelector('#skillGrid thead tr'); b.innerHTML = ''; h.querySelectorAll('.spacer-col-header').forEach(th => { const i = parseInt(th.dataset.gap); th.classList.toggle('gap-closed', gapStates[i]); th.onclick = () => toggleGap(i) }); for (let i = 0; i < 11; i++) { const r = document.createElement('tr'); for (let j = 0; j < 6; j++) { const d = document.createElement('td'), s = SKILL_GRID_DATA[i][j]; d.textContent = s; d.dataset.skill = s; d.dataset.y = i; d.dataset.x = j; if (acquiredSkills.has(s)) d.classList.add('selected'); d.onclick = (e) => handleSkillClick(e.target); r.appendChild(d); if (j < 5) { const sp = document.createElement('td'); sp.className = 'spacer-col'; if (gapStates[j]) sp.classList.add('gap-closed'); r.appendChild(sp) } } b.appendChild(r) } }
