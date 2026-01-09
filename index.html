@@ -1,17 +1,19 @@
+
 <!DOCTYPE html>
 <html lang="ja">
+
 <head>
 
     <!--
     修正版v5:
     1. ログイン画面の切替リンクを右寄せのボタンに変更
-    2. 判定値の表示形式を「2D6>=X （代用判定：YY）」等に変更
+    2. 判定値の表示形式を「2D6>=X （代用判定：YY）」等に変更daf
     -->
-     
+
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>シノビガミ Webツール (Firebase Server)</title>
-    
+
     <!-- Firebase SDKs (v11.6.1) -->
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
@@ -42,7 +44,7 @@
 
         async function initApp() {
             updateStatus('connecting', 'サーバー接続中...');
-            
+
             if (firebaseConfig.apiKey === "ここにAPI_KEYを貼り付け") {
                 updateStatus('offline', '設定エラー');
                 alert("Firebase設定が必要です。コードを確認してください。");
@@ -56,13 +58,13 @@
 
                 await signInAnonymously(auth);
                 await ensureAdminExists();
-                
+
                 firebaseReady = true;
                 updateStatus('online', 'サーバー接続完了 (Online)');
                 document.getElementById('loadingOverlay').style.display = 'none';
-                
+
                 const lastUser = localStorage.getItem('last_username');
-                if(lastUser) document.getElementById('authUsername').value = lastUser;
+                if (lastUser) document.getElementById('authUsername').value = lastUser;
 
                 checkAuth();
 
@@ -72,18 +74,19 @@
                 alert("データベース接続エラー: " + error.message);
             }
         }
-        
+
         function updateStatus(state, msg) {
             const el = document.getElementById('serverStatus');
             const txt = document.getElementById('serverStatusText');
-            if(el) {
+            if (el) {
                 txt.textContent = msg;
                 el.className = 'status-indicator ' + state;
             }
         }
 
         async function ensureAdminExists() {
-            
+            const adminUser = 'seekerius0017';
+            const adminPass = '123456789';
             try {
                 const q = query(collection(db, 'artifacts', appId, 'public', 'data', USERS_COL), where('username', '==', adminUser));
                 const snapshot = await getDocs(q);
@@ -108,7 +111,7 @@
         }
         window.addEventListener('hashchange', checkAuth);
 
-        window.app_rcreateUserWithEmailAndPasswordegister = async (username, password) => {
+        window.app_register = async (username, password) => {
             if (!firebaseReady) return alert("サーバー接続中...");
             if (password.length < 6) return { success: false, message: "パスワードは6文字以上で設定してください。" };
             try {
@@ -116,38 +119,38 @@
                 const q = query(usersRef, where('username', '==', username));
                 const snapshot = await getDocs(q);
                 if (!snapshot.empty) return { success: false, message: "そのユーザー名は既に使用されています。" };
-                
-                await addDoc(usersRef, { 
-                    username: username, 
-                    password: password, 
-                    role: 'user', 
-                    createdAt: Date.now() 
+
+                await addDoc(usersRef, {
+                    username: username,
+                    password: password,
+                    role: 'user',
+                    createdAt: Date.now()
                 });
                 return { success: true };
             } catch (e) { return { success: false, message: "エラー: " + e.message }; }
         };
 
-        window.signInWithEmailAndPassword = async (username, password) => {
+        window.app_login = async (username, password) => {
             if (!firebaseReady) return alert("サーバー接続中...");
             try {
                 const usersRef = collection(db, 'artifacts', appId, 'public', 'data', USERS_COL);
                 const q = query(usersRef, where('username', '==', username));
                 const snapshot = await getDocs(q);
                 if (snapshot.empty) return { success: false, message: "ユーザー名またはパスワードが違います。" };
-                
+
                 const userDoc = snapshot.docs[0];
                 const userData = userDoc.data();
-                
+
                 if (userData.password !== password) return { success: false, message: "ユーザー名またはパスワードが違います。" };
-                
+
                 dbUser = { id: userDoc.id, ...userData };
                 window.currentUser = dbUser;
                 localStorage.setItem('last_username', username);
-                
+
                 return { success: true, role: userData.role };
             } catch (e) { return { success: false, message: "ログインエラー" }; }
         };
-        
+
         window.app_logout = () => {
             dbUser = null;
             window.currentUser = null;
@@ -169,16 +172,16 @@
             try {
                 const colRef = collection(db, 'artifacts', appId, 'public', 'data', CHARS_COL);
                 const savePayload = { ...data, owner: dbUser.username, updatedAt: Date.now() };
-                delete savePayload.id; 
-                
-                if (charId) { 
-                    await updateDoc(doc(colRef, charId), savePayload); 
-                    return charId; 
-                } else { 
-                    const docRef = await addDoc(colRef, savePayload); 
-                    return docRef.id; 
+                delete savePayload.id;
+
+                if (charId) {
+                    await updateDoc(doc(colRef, charId), savePayload);
+                    return charId;
+                } else {
+                    const docRef = await addDoc(colRef, savePayload);
+                    return docRef.id;
                 }
-            } catch(e) { throw e; }
+            } catch (e) { throw e; }
         };
 
         window.app_getCharacter = async (charId) => {
@@ -188,778 +191,1526 @@
                 if (!snap.exists()) return null;
                 const data = snap.data();
                 return { id: snap.id, ...data };
-            } catch(e) { return null; }
+            } catch (e) { return null; }
         };
 
         window.app_deleteCharacter = async (charId) => {
             if (!dbUser) return;
-             try { await deleteDoc(doc(db, 'artifacts', appId, 'public', 'data', CHARS_COL, charId)); } catch(e) { throw e; }
+            try { await deleteDoc(doc(db, 'artifacts', appId, 'public', 'data', CHARS_COL, charId)); } catch (e) { throw e; }
         };
-        
+
         window.app_admin_getUsers = async () => {
             if (!dbUser || dbUser.role !== 'admin') return [];
             const snapshot = await getDocs(collection(db, 'artifacts', appId, 'public', 'data', USERS_COL));
             return snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
         };
         window.app_admin_updateUser = async (docId, newPass) => {
-             if (!dbUser || dbUser.role !== 'admin') return;
-             await updateDoc(doc(db, 'artifacts', appId, 'public', 'data', USERS_COL, docId), { password: newPass });
+            if (!dbUser || dbUser.role !== 'admin') return;
+            await updateDoc(doc(db, 'artifacts', appId, 'public', 'data', USERS_COL, docId), { password: newPass });
         };
         window.app_admin_deleteUser = async (docId) => {
-             if (!dbUser || dbUser.role !== 'admin') return;
-             await deleteDoc(doc(db, 'artifacts', appId, 'public', 'data', USERS_COL, docId));
+            if (!dbUser || dbUser.role !== 'admin') return;
+            await deleteDoc(doc(db, 'artifacts', appId, 'public', 'data', USERS_COL, docId));
         };
 
         initApp();
     </script>
-    
+
     <style>
-        :root { --bg: #212529; --card-bg: #343a40; --accent: #c02d47; --text: #f8f9fa; --border: #495057; --radius: 12px; --gap-closed: #000000; }
-        body { font-family: "Hiragino Sans", "Noto Sans JP", sans-serif; background: var(--bg); color: var(--text); margin: 0; padding: 0; }
-        
-        .status-bar { position: fixed; top: 0; left: 0; padding: 4px 10px; font-size: 0.7rem; z-index: 10000; display: flex; align-items: center; gap: 6px; background: rgba(0,0,0,0.5); border-bottom-right-radius: 8px; backdrop-filter: blur(4px); }
-        .status-indicator { width: 8px; height: 8px; border-radius: 50%; background: #808080; }
-        .status-indicator.connecting { background: #ffc107; box-shadow: 0 0 5px #ffc107; }
-        .status-indicator.online { background: #28a745; box-shadow: 0 0 5px #28a745; }
-        .status-indicator.offline { background: #dc3545; box-shadow: 0 0 5px #dc3545; }
+        :root {
+            --bg: #212529;
+            --card-bg: #343a40;
+            --accent: #c02d47;
+            --text: #f8f9fa;
+            --border: #495057;
+            --radius: 12px;
+            --gap-closed: #000000;
+        }
 
-        header { background: var(--accent); color: #fff; padding: 1rem; font-size: 1.2rem; box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2); position: sticky; top: 0; z-index: 100; display: flex; justify-content: space-between; align-items: center; }
-        .header-controls { display: flex; gap: 10px; align-items: center; }
-        .header-btn { background: rgba(255,255,255,0.2); border: 1px solid rgba(255,255,255,0.5); font-size: 0.8rem; padding: 0.3rem 0.8rem; color: white; border-radius: 4px; cursor: pointer; }
-        .header-btn:hover { background: rgba(255,255,255,0.3); }
-        main { max-width: 900px; margin: 2rem auto; padding: 0 1rem; padding-bottom: 4rem; }
-        .card { background: var(--card-bg); border-radius: var(--radius); box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1); padding: 1.5rem; margin-bottom: 1.5rem; }
-        .card h2 { font-size: 1.3rem; border-left: 6px solid var(--accent); padding-left: 0.5rem; margin-bottom: 1rem; }
-        table { width: 100%; border-collapse: collapse; margin-bottom: 1rem; }
-        th, td { padding: 0.5rem; text-align: left; border-bottom: 1px solid var(--border); }
-        th { background: #212529; font-weight: 600; white-space: nowrap; }
-        input[type="text"], input[type="password"], input[type="number"], textarea, select { width: 100%; padding: 0.5rem; border-radius: 6px; border: 1px solid #6c757d; font-size: 1rem; box-sizing: border-box; background-color: #495057; color: var(--text); }
-        textarea { resize: vertical; }
-        button { background: var(--accent); border: none; color: white; padding: 0.6rem 1.2rem; border-radius: 6px; cursor: pointer; transition: background 0.2s; }
-        button:hover { background: #a4253a; }
-        button.secondary { background: #6c757d; }
-        button.btn-danger { background-color: #dc3545; }
-        button.btn-success { background-color: #28a745; }
-        .form-grid { display: flex; flex-wrap: wrap; margin: 0 -0.5rem; }
-        .form-col { padding: 0 0.5rem; box-sizing: border-box; margin-bottom: 1rem; }
-        .col-4 { flex: 0 0 33.33%; max-width: 33.33%; }
-        .col-6 { flex: 0 0 50%; max-width: 50%; }
-        .col-12 { flex: 0 0 100%; max-width: 100%; }
-        .input-group { display: flex; width: 100%; }
-        .input-group-text { background: #212529; border: 1px solid #6c757d; padding: 0.5rem 0.75rem; border-radius: 6px 0 0 6px; font-weight: 600; color: #ced4da; white-space: nowrap; display: flex; align-items: center;}
-        .input-group input, .input-group select { border-radius: 0 6px 6px 0; }
-        
-        .password-wrapper { position: relative; width: 100%; }
-        .password-toggle { position: absolute; right: 10px; top: 50%; transform: translateY(-50%); cursor: pointer; width: 20px; height: 20px; z-index: 10; opacity: 0.7; display: flex; align-items: center; justify-content: center; }
-        .password-toggle:hover { opacity: 1; }
-        .password-toggle svg { fill: #f8f9fa; width: 100%; height: 100%; }
+        body {
+            font-family: "Hiragino Sans", "Noto Sans JP", sans-serif;
+            background: var(--bg);
+            color: var(--text);
+            margin: 0;
+            padding: 0;
+        }
 
-        .drag-drop-area { border: 2px dashed #ffffff !important; border-radius: var(--radius); padding: 1.5rem 1rem; text-align: center; color: #ffffff !important; cursor: pointer; transition: all 0.2s ease; background: rgba(255, 255, 255, 0.05); }
-        .img-preview-box img { max-width: 100%; max-height: 300px; object-fit: contain; }
+        .status-bar {
+            position: fixed;
+            top: 0;
+            left: 0;
+            padding: 4px 10px;
+            font-size: 0.7rem;
+            z-index: 10000;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            background: rgba(0, 0, 0, 0.5);
+            border-bottom-right-radius: 8px;
+            backdrop-filter: blur(4px);
+        }
 
-        .skill-container { display: flex; flex-wrap: wrap; gap: 1rem; }
-        .skill-grid-wrapper { flex: 3; min-width: 300px; }
-        .acquired-skills-wrapper { flex: 2; min-width: 250px; }
-        #skillGrid th.spacer-col-header:hover { background-color: #444; }
-        .gap-closed { background-color: #000 !important; }
-        #skillGridBody td.selected { background-color: #ffee7c; color: #333; font-weight: bold; }
-        #skillGridBody td.judging { background-color: #6c757d; font-weight: bold; }
-        
+        .status-indicator {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: #808080;
+        }
+
+        .status-indicator.connecting {
+            background: #ffc107;
+            box-shadow: 0 0 5px #ffc107;
+        }
+
+        .status-indicator.online {
+            background: #28a745;
+            box-shadow: 0 0 5px #28a745;
+        }
+
+        .status-indicator.offline {
+            background: #dc3545;
+            box-shadow: 0 0 5px #dc3545;
+        }
+
+        header {
+            background: var(--accent);
+            color: #fff;
+            padding: 1rem;
+            font-size: 1.2rem;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
+            position: sticky;
+            top: 0;
+            z-index: 100;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .header-controls {
+            display: flex;
+            gap: 10px;
+            align-items: center;
+        }
+
+        .header-btn {
+            background: rgba(255, 255, 255, 0.2);
+            border: 1px solid rgba(255, 255, 255, 0.5);
+            font-size: 0.8rem;
+            padding: 0.3rem 0.8rem;
+            color: white;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+
+        .header-btn:hover {
+            background: rgba(255, 255, 255, 0.3);
+        }
+
+        main {
+            max-width: 900px;
+            margin: 2rem auto;
+            padding: 0 1rem;
+            padding-bottom: 4rem;
+        }
+
+        /* Palette Modal Styles */
+        .color-palette-header {
+            font-size: 1.5rem;
+            font-weight: bold;
+            margin-bottom: 1rem;
+            color: #333;
+        }
+
+        .palette-modal-content {
+            background-color: #f8f9fa;
+            color: #333;
+            max-width: 600px;
+            width: 95%;
+            border-radius: 12px;
+            padding: 2rem;
+            text-align: center;
+        }
+
+        .palette-textarea {
+            width: 100%;
+            height: 300px;
+            margin: 1rem 0;
+            padding: 0.5rem;
+            border-radius: 6px;
+            border: 1px solid #ccc;
+            font-family: monospace;
+            resize: none;
+            background: #fff;
+            color: #000;
+        }
+
+        .palette-actions {
+            display: flex;
+            justify-content: center;
+            gap: 1rem;
+            margin-top: 1rem;
+        }
+
+        .btn-copy {
+            background-color: #6c757d;
+            color: white;
+            border-radius: 20px;
+            padding: 0.5rem 1.5rem;
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+
+        .btn-dl {
+            background-color: #a8e6cf;
+            color: #3b7a57;
+            border-radius: 20px;
+            padding: 0.5rem 1.5rem;
+            font-weight: bold;
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+
+        .btn-koma {
+            background-color: #d1d8e0;
+            color: #4b6584;
+            border-radius: 20px;
+            padding: 0.5rem 1.5rem;
+            font-weight: bold;
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+
+        /* Changed color to better match image */
+        .btn-koma-blue {
+            background-color: #a2c2e0;
+            color: #1e3799;
+            border-radius: 20px;
+            padding: 0.5rem 1.5rem;
+            font-weight: bold;
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+
+        .card {
+            background: var(--card-bg);
+            border-radius: var(--radius);
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+            padding: 1.5rem;
+            margin-bottom: 1.5rem;
+        }
+
+        .card h2 {
+            font-size: 1.3rem;
+            border-left: 6px solid var(--accent);
+            padding-left: 0.5rem;
+            margin-bottom: 1rem;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-bottom: 1rem;
+        }
+
+        th,
+        td {
+            padding: 0.5rem;
+            text-align: left;
+            border-bottom: 1px solid var(--border);
+        }
+
+        th {
+            background: #212529;
+            font-weight: 600;
+            white-space: nowrap;
+        }
+
+        input[type="text"],
+        input[type="password"],
+        input[type="number"],
+        textarea,
+        select {
+            width: 100%;
+            padding: 0.5rem;
+            border-radius: 6px;
+            border: 1px solid #6c757d;
+            font-size: 1rem;
+            box-sizing: border-box;
+            background-color: #495057;
+            color: var(--text);
+        }
+
+        textarea {
+            resize: vertical;
+        }
+
+        button {
+            background: var(--accent);
+            border: none;
+            color: white;
+            padding: 0.6rem 1.2rem;
+            border-radius: 6px;
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+
+        button:hover {
+            background: #a4253a;
+        }
+
+        button.secondary {
+            background: #6c757d;
+        }
+
+        button.btn-danger {
+            background-color: #dc3545;
+        }
+
+        button.btn-success {
+            background-color: #28a745;
+        }
+
+        .form-grid {
+            display: flex;
+            flex-wrap: wrap;
+            margin: 0 -0.5rem;
+        }
+
+        .form-col {
+            padding: 0 0.5rem;
+            box-sizing: border-box;
+            margin-bottom: 1rem;
+        }
+
+        .col-4 {
+            flex: 0 0 33.33%;
+            max-width: 33.33%;
+        }
+
+        .col-6 {
+            flex: 0 0 50%;
+            max-width: 50%;
+        }
+
+        .col-12 {
+            flex: 0 0 100%;
+            max-width: 100%;
+        }
+
+        .input-group {
+            display: flex;
+            width: 100%;
+        }
+
+        .input-group-text {
+            background: #212529;
+            border: 1px solid #6c757d;
+            padding: 0.5rem 0.75rem;
+            border-radius: 6px 0 0 6px;
+            font-weight: 600;
+            color: #ced4da;
+            white-space: nowrap;
+            display: flex;
+            align-items: center;
+        }
+
+        .input-group input,
+        .input-group select {
+            border-radius: 0 6px 6px 0;
+        }
+
+        .password-wrapper {
+            position: relative;
+            width: 100%;
+        }
+
+        .password-toggle {
+            position: absolute;
+            right: 10px;
+            top: 50%;
+            transform: translateY(-50%);
+            cursor: pointer;
+            width: 20px;
+            height: 20px;
+            z-index: 10;
+            opacity: 0.7;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .password-toggle:hover {
+            opacity: 1;
+        }
+
+        .password-toggle svg {
+            fill: #f8f9fa;
+            width: 100%;
+            height: 100%;
+        }
+
+        .drag-drop-area {
+            border: 2px dashed #ffffff !important;
+            border-radius: var(--radius);
+            padding: 1.5rem 1rem;
+            text-align: center;
+            color: #ffffff !important;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            background: rgba(255, 255, 255, 0.05);
+        }
+
+        .img-preview-box img {
+            max-width: 100%;
+            max-height: 300px;
+            object-fit: contain;
+        }
+
+        .skill-container {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 1rem;
+        }
+
+        .skill-grid-wrapper {
+            flex: 3;
+            min-width: 300px;
+        }
+
+        .acquired-skills-wrapper {
+            flex: 2;
+            min-width: 250px;
+        }
+
+        #skillGrid th.spacer-col-header:hover {
+            background-color: #444;
+        }
+
+        .gap-closed {
+            background-color: #000 !important;
+        }
+
+        #skillGridBody td.selected {
+            background-color: #ffee7c;
+            color: #333;
+            font-weight: bold;
+        }
+
+        #skillGridBody td.judging {
+            background-color: #6c757d;
+            font-weight: bold;
+        }
+
         /* 判定結果のスタイル */
-        .judgment-result { font-size: 0.9em; margin-left: 10px; }
-        
+        .judgment-result {
+            font-size: 0.9em;
+            margin-left: 10px;
+        }
+
         /* 認証画面のスタイル修正 (右寄せボタン化) */
-        .auth-container { max-width: 400px; margin: 4rem auto; text-align: center; }
-        .auth-toggle { 
-            margin-top: 1rem; 
-            color: #fff; 
-            cursor: pointer; 
-            display: table; /* 中身に合わせて伸縮 */
-            margin-left: auto; /* 右寄せ */
-            background-color: #6c757d; /* ボタン風の背景 */
+        .auth-container {
+            max-width: 400px;
+            margin: 4rem auto;
+            text-align: center;
+        }
+
+        .auth-toggle {
+            margin-top: 1rem;
+            color: #fff;
+            cursor: pointer;
+            display: table;
+            /* 中身に合わせて伸縮 */
+            margin-left: auto;
+            /* 右寄せ */
+            background-color: #6c757d;
+            /* ボタン風の背景 */
             padding: 0.5rem 1rem;
             border-radius: 4px;
             font-size: 0.9rem;
             text-decoration: none;
             transition: background 0.2s;
         }
-        .auth-toggle:hover { background-color: #5a6268; }
 
-        .auth-note { text-align: left; font-size: 0.8rem; color: #ffaAAA; margin-bottom: 10px; }
-        
-        .char-item { display: flex; background: var(--card-bg); border-radius: var(--radius); padding: 1rem; align-items: center; gap: 1rem; }
-        .char-thumb { width: 120px; height: 120px; border-radius: 6px; object-fit: contain; }
-        .char-info { flex-grow: 1; }
-        .dynamic-table-container { overflow-x: auto; scrollbar-width: none; }
-        
-        .modal-overlay { position: fixed; top:0; left:0; width:100%; height:100%; background: rgba(0,0,0,0.7); display: none; justify-content: center; align-items: center; z-index: 1000; }
-        .modal { background: var(--card-bg); padding: 2rem; border-radius: var(--radius); max-width: 400px; width: 90%; text-align: center; }
-        .modal-buttons { margin-top: 1.5rem; display: flex; justify-content: center; gap: 1rem; }
-        .toast-notification { position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%); background-color: rgba(50, 50, 50, 0.9); color: #fff; padding: 12px 24px; border-radius: 30px; z-index: 2000; opacity: 0; transition: 0.3s; pointer-events: none; }
-        .toast-notification.show { opacity: 1; }
-        
-        .hidden { display: none !important; }
-        #loadingOverlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: #212529; z-index: 9999; display: flex; justify-content: center; align-items: center; color: white; font-size: 1.5rem; flex-direction: column; gap: 10px; }
+        .auth-toggle:hover {
+            background-color: #5a6268;
+        }
+
+        .auth-note {
+            text-align: left;
+            font-size: 0.8rem;
+            color: #ffaAAA;
+            margin-bottom: 10px;
+        }
+
+        .char-item {
+            display: flex;
+            background: var(--card-bg);
+            border-radius: var(--radius);
+            padding: 1rem;
+            align-items: center;
+            gap: 1rem;
+        }
+
+        .char-thumb {
+            width: 120px;
+            height: 120px;
+            border-radius: 6px;
+            object-fit: contain;
+        }
+
+        .char-info {
+            flex-grow: 1;
+        }
+
+        .dynamic-table-container {
+            overflow-x: auto;
+            scrollbar-width: none;
+        }
+
+        .modal-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.7);
+            display: none;
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+        }
+
+        .modal {
+            background: var(--card-bg);
+            padding: 2rem;
+            border-radius: var(--radius);
+            max-width: 400px;
+            width: 90%;
+            text-align: center;
+        }
+
+        .modal-buttons {
+            margin-top: 1.5rem;
+            display: flex;
+            justify-content: center;
+            gap: 1rem;
+        }
+
+        .toast-notification {
+            position: fixed;
+            bottom: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            background-color: rgba(50, 50, 50, 0.9);
+            color: #fff;
+            padding: 12px 24px;
+            border-radius: 30px;
+            z-index: 2000;
+            opacity: 0;
+            transition: 0.3s;
+            pointer-events: none;
+        }
+
+        .toast-notification.show {
+            opacity: 1;
+        }
+
+        .hidden {
+            display: none !important;
+        }
+
+        #loadingOverlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: #212529;
+            z-index: 9999;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            color: white;
+            font-size: 1.5rem;
+            flex-direction: column;
+            gap: 10px;
+        }
 
         /* 閲覧モード時に .edit-only クラスを持つ要素を強制的に非表示にする */
-        body.view-mode .edit-only { display: none !important; }
+        body.view-mode .edit-only {
+            display: none !important;
+        }
 
         @media (max-width: 700px) {
-            .col-4, .col-6 { flex: 0 0 100%; max-width: 100%; }
-            .char-item { flex-direction: column; text-align: center; }
-            .char-actions { justify-content: center; width: 100%; }
+
+            .col-4,
+            .col-6 {
+                flex: 0 0 100%;
+                max-width: 100%;
+            }
+
+            .char-item {
+                flex-direction: column;
+                text-align: center;
+            }
+
+            .char-actions {
+                justify-content: center;
+                width: 100%;
+            }
         }
     </style>
 </head>
+
 <body>
 
-<div class="status-bar">
-    <div id="serverStatus" class="status-indicator connecting"></div>
-    <div id="serverStatusText">接続中...</div>
-</div>
-
-<div id="loadingOverlay">
-    <div>Server Connecting...</div>
-</div>
-
-<!-- Header -->
-<header id="appHeader" class="hidden">
-    <div id="headerTitle">シノビガミ管理サーバー</div>
-    <div class="header-controls">
-        <span id="headerUsername" style="font-size:0.9rem; margin-right:10px;"></span>
-        <button id="unlockSecretHeaderBtn" class="header-btn hidden" title="秘密を閲覧">🔓</button>
-        <button id="homeBtn" class="header-btn hidden">一覧</button>
-        <button id="adminBtn" class="header-btn hidden">管理</button>
-        <button id="loginLinkBtn" class="header-btn hidden" onclick="location.hash='#login'">ログイン</button>
-        <button id="logoutBtn" class="header-btn hidden">ログアウト</button>
-    </div>
-</header>
-
-<main>
-    <!-- === LOGIN SCREEN === -->
-    <div id="page-login" class="auth-container hidden">
-        <div class="card">
-            <h2 id="authTitle">サーバーログイン</h2>
-            <div class="form-grid">
-                <div class="col-12">
-                    <input type="text" id="authUsername" placeholder="ユーザー名">
-                </div>
-                <div class="col-12">
-                    <div class="password-wrapper">
-                        <input type="password" id="authPassword" placeholder="パスワード">
-                        <span class="password-toggle" id="authPassIcon" onclick="toggleAuthPassword()">
-                            <svg viewBox="0 0 24 24"><path d="M12 4.5C7 4.5 2.73 7.61 1 12c1.73 4.39 6 7.5 11 7.5s9.27-3.11 11-7.5c-1.73-4.39-6-7.5-11-7.5zM12 17c-2.76 0-5-2.24-5-5s2.24-5 5-5 5 2.24 5 5-2.24 5-5 5zm0-8c-1.66 0-3 1.34-3 3s1.34 3 3 3 3-1.34 3-3-1.34-3-3-3z"/></svg>
-                        </span>
-                    </div>
-                </div>
-                <div id="regReq" class="col-12 hidden">
-                    <div class="auth-note">※パスワード要件: 6文字以上</div>
-                </div>
-                <div class="col-12" style="margin-top:1rem;">
-                    <button id="authActionBtn">ログイン</button>
-                </div>
-            </div>
-            <!-- 切替ボタン (右寄せ・ボタン化) -->
-            <div class="auth-toggle" id="authToggleBtn">アカウント作成はこちら</div>
-        </div>
+    <div class="status-bar">
+        <div id="serverStatus" class="status-indicator connecting"></div>
+        <div id="serverStatusText">接続中...</div>
     </div>
 
-    <!-- === ADMIN SCREEN === -->
-    <div id="page-admin" class="hidden">
-        <div class="card">
-            <h2>管理者ダッシュボード</h2>
-            <table class="admin-table">
-                <thead><tr><th>ユーザー名</th><th>パスワード</th><th>操作</th></tr></thead>
-                <tbody id="adminUserListBody"></tbody>
-            </table>
-        </div>
+    <div id="loadingOverlay">
+        <div>Server Connecting...</div>
     </div>
 
-    <!-- === LIST SCREEN === -->
-    <div id="page-list" class="hidden">
-        <div class="search-bar">
-            <input type="text" id="searchInput" placeholder="キャラクター名で検索...">
+    <!-- Header -->
+    <header id="appHeader" class="hidden">
+        <div id="headerTitle" style="cursor: pointer;" onclick="if(window.currentUser) location.hash='#list';">
+            シノビガミ管理サーバー</div>
+        <div class="header-controls">
+            <span id="headerUsername" style="font-size:0.9rem; margin-right:10px;"></span>
+            <button id="unlockSecretHeaderBtn" class="header-btn hidden" title="秘密を閲覧">🔓</button>
+            <button id="homeBtn" class="header-btn hidden" onclick="location.hash='#list'">一覧</button>
+            <button id="adminBtn" class="header-btn hidden">管理</button>
+            <button id="loginLinkBtn" class="header-btn hidden" onclick="location.hash='#login'">ログイン</button>
+            <button id="logoutBtn" class="header-btn hidden">ログアウト</button>
         </div>
-        <div style="text-align: right; margin-bottom: 1rem;">
-            <button id="createNewBtn">新規作成</button>
-        </div>
-        <div id="charListContainer" class="char-list"></div>
-    </div>
+    </header>
 
-    <!-- === EDIT / VIEW SCREEN === -->
-    <div id="page-form" class="hidden">
-        <form id="charForm">
-            <!-- Basic Info -->
+    <main>
+        <!-- === LOGIN SCREEN === -->
+        <div id="page-login" class="auth-container hidden">
             <div class="card">
-                <h2>基本情報</h2>
+                <h2 id="authTitle">サーバーログイン</h2>
                 <div class="form-grid">
-                    <div class="form-col col-6">
-                        <div class="input-group"><span class="input-group-text">プレイヤー</span><input type="text" name="player"></div>
+                    <div class="col-12">
+                        <input type="text" id="authUsername" placeholder="ユーザー名">
                     </div>
-                    <div class="form-col col-6">
-                        <div class="input-group"><span class="input-group-text">キャラクター名</span><input type="text" name="name"></div>
-                    </div>
-                    <div class="form-col col-6">
-                        <div class="input-group"><span class="input-group-text">カナ</span><input type="text" name="nameKana"></div>
-                    </div>
-                    <div class="form-col col-6">
-                        <div class="input-group"><span class="input-group-text">レギュレーション</span><input type="text" name="regulation"></div>
-                    </div>
-                    <div class="form-col col-4">
-                        <div class="input-group">
-                            <span class="input-group-text">流派</span>
-                            <input type="text" name="substyle" list="styleList">
-                            <datalist id="styleList">
-                                <option value="斜歯忍軍"><option value="鞍馬神流"><option value="ハグレモノ">
-                                <option value="比良坂機関"><option value="私立御斎学園"><option value="隠忍の血統">
-                            </datalist>
+                    <div class="col-12">
+                        <div class="password-wrapper">
+                            <input type="password" id="authPassword" placeholder="パスワード">
+                            <span class="password-toggle" id="authPassIcon" onclick="toggleAuthPassword()">
+                                <svg viewBox="0 0 24 24">
+                                    <path
+                                        d="M12 4.5C7 4.5 2.73 7.61 1 12c1.73 4.39 6 7.5 11 7.5s9.27-3.11 11-7.5c-1.73-4.39-6-7.5-11-7.5zM12 17c-2.76 0-5-2.24-5-5s2.24-5 5-5 5 2.24 5 5-2.24 5-5 5zm0-8c-1.66 0-3 1.34-3 3s1.34 3 3 3 3-1.34 3-3-1.34-3-3-3z" />
+                                </svg>
+                            </span>
                         </div>
                     </div>
-                    <div class="form-col col-4">
-                        <div class="input-group"><span class="input-group-text">階級</span><input type="text" name="rank"></div>
+                    <div id="regReq" class="col-12 hidden">
+                        <div class="auth-note">※パスワード要件: 6文字以上</div>
                     </div>
-                    <div class="form-col col-4">
-                        <div class="input-group"><span class="input-group-text">年齢/性別</span><input type="text" name="age_sex"></div>
-                    </div>
-                    <div class="form-col col-4">
-                        <div class="input-group"><span class="input-group-text">表の顔</span><input type="text" name="cover"></div>
-                    </div>
-                    <div class="form-col col-4">
-                        <div class="input-group"><span class="input-group-text">信念</span><input type="text" name="belief"></div>
-                    </div>
-                     <div class="form-col col-4">
-                        <div class="input-group"><span class="input-group-text">功績</span><input type="text" name="achievements"></div>
-                    </div>
-                    <div class="form-col col-12">
-                        <textarea name="memo" rows="3" placeholder="キャラクターメモ..."></textarea>
-                    </div>
-                    
-                    <div class="form-col col-6 edit-only">
-                        <div id="dropZone" class="drag-drop-area">
-                            <div class="drag-icon">📁</div>
-                            <p>画像をドラッグ＆ドロップ<br><span style="font-size:0.8rem; color:#ddd;">またはクリックして選択</span></p>
-                            <input type="file" id="imgInput" accept="image/*" class="hidden-file-input">
-                        </div>
-                        <button type="button" id="deleteImageBtn" class="btn-danger" style="width:100%; margin-top:10px; display:none;">画像を削除</button>
-                    </div>
-                    <div class="form-col col-6">
-                        <div class="img-preview-box">
-                            <img id="charImage" src="" alt="" style="display:none;">
-                        </div>
-                    </div>
-                    
-                    <div class="form-col col-12 edit-only">
-                        <div class="input-group">
-                            <span class="input-group-text" style="background:#440000; color:#ffdddd;">編集パスワード</span>
-                            <input type="text" name="editPassword" placeholder="設定すると他者との共有時に使用できます">
-                        </div>
+                    <div class="col-12" style="margin-top:1rem;">
+                        <button id="authActionBtn">ログイン</button>
                     </div>
                 </div>
+                <!-- 切替ボタン (右寄せ・ボタン化) -->
+                <div class="auth-toggle" id="authToggleBtn">アカウント作成はこちら</div>
             </div>
+        </div>
 
-            <!-- Skills -->
+        <!-- === ADMIN SCREEN === -->
+        <div id="page-admin" class="hidden">
             <div class="card">
-                <h2>特技</h2>
-                <div class="skill-controls">
-                    <label><input type="radio" name="mode" value="setting" checked> 設定（習得）</label>
-                    <label style="margin-left:1rem;"><input type="radio" name="mode" value="judgment"> 判定</label>
-                    <span style="float:right; color:#aaa; font-size:0.8rem;">A-Eをクリックでギャップ閉鎖</span>
-                </div>
-                <div class="skill-container">
-                    <div class="skill-grid-wrapper">
-                        <table id="skillGrid">
-                            <thead>
-                                <tr>
-                                    <th>器術</th><th class="spacer-col-header" data-gap="0">A</th>
-                                    <th>体術</th><th class="spacer-col-header" data-gap="1">B</th>
-                                    <th>忍術</th><th class="spacer-col-header" data-gap="2">C</th>
-                                    <th>謀術</th><th class="spacer-col-header" data-gap="3">D</th>
-                                    <th>戦術</th><th class="spacer-col-header" data-gap="4">E</th>
-                                    <th>妖術</th>
-                                </tr>
-                            </thead>
-                            <tbody id="skillGridBody"></tbody>
-                        </table>
+                <h2>管理者ダッシュボード</h2>
+                <table class="admin-table">
+                    <thead>
+                        <tr>
+                            <th>ユーザー名</th>
+                            <th>パスワード</th>
+                            <th>操作</th>
+                        </tr>
+                    </thead>
+                    <tbody id="adminUserListBody"></tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- === LIST SCREEN === -->
+        <div id="page-list" class="hidden">
+            <div class="search-bar">
+                <input type="text" id="searchInput" placeholder="キャラクター名で検索...">
+            </div>
+            <div style="text-align: right; margin-bottom: 1rem;">
+                <button id="createNewBtn">新規作成</button>
+            </div>
+            <div id="charListContainer" class="char-list"></div>
+        </div>
+
+        <!-- === EDIT / VIEW SCREEN === -->
+        <div id="page-form" class="hidden">
+            <form id="charForm">
+                <!-- Basic Info -->
+                <div class="card">
+                    <h2>基本情報</h2>
+                    <div class="form-grid">
+                        <div class="form-col col-6">
+                            <div class="input-group"><span class="input-group-text">プレイヤー</span><input type="text"
+                                    name="player"></div>
+                        </div>
+                        <div class="form-col col-6">
+                            <div class="input-group"><span class="input-group-text">キャラクター名</span><input type="text"
+                                    name="name"></div>
+                        </div>
+                        <div class="form-col col-6">
+                            <div class="input-group"><span class="input-group-text">カナ</span><input type="text"
+                                    name="nameKana"></div>
+                        </div>
+                        <div class="form-col col-6">
+                            <div class="input-group"><span class="input-group-text">レギュレーション</span><input type="text"
+                                    name="regulation"></div>
+                        </div>
+                        <div class="form-col col-4">
+                            <div class="input-group">
+                                <span class="input-group-text">流派</span>
+                                <input type="text" name="substyle" list="styleList">
+                                <datalist id="styleList">
+                                    <option value="斜歯忍軍">
+                                    <option value="鞍馬神流">
+                                    <option value="ハグレモノ">
+                                    <option value="比良坂機関">
+                                    <option value="私立御斎学園">
+                                    <option value="隠忍の血統">
+                                </datalist>
+                            </div>
+                        </div>
+                        <div class="form-col col-4">
+                            <div class="input-group"><span class="input-group-text">階級</span><input type="text"
+                                    name="rank"></div>
+                        </div>
+                        <div class="form-col col-4">
+                            <div class="input-group"><span class="input-group-text">年齢/性別</span><input type="text"
+                                    name="age_sex"></div>
+                        </div>
+                        <div class="form-col col-4">
+                            <div class="input-group"><span class="input-group-text">表の顔</span><input type="text"
+                                    name="cover"></div>
+                        </div>
+                        <div class="form-col col-4">
+                            <div class="input-group"><span class="input-group-text">信念</span><input type="text"
+                                    name="belief"></div>
+                        </div>
+                        <div class="form-col col-4">
+                            <div class="input-group"><span class="input-group-text">功績</span><input type="text"
+                                    name="achievements"></div>
+                        </div>
+                        <div class="form-col col-12">
+                            <textarea name="memo" rows="3" placeholder="キャラクターメモ..."></textarea>
+                        </div>
+
+                        <div class="form-col col-6 edit-only">
+                            <div id="dropZone" class="drag-drop-area">
+                                <div class="drag-icon">📁</div>
+                                <p>画像をドラッグ＆ドロップ<br><span style="font-size:0.8rem; color:#ddd;">またはクリックして選択</span></p>
+                                <input type="file" id="imgInput" accept="image/*" class="hidden-file-input">
+                            </div>
+                            <button type="button" id="deleteImageBtn" class="btn-danger"
+                                style="width:100%; margin-top:10px; display:none;">画像を削除</button>
+                        </div>
+                        <div class="form-col col-6">
+                            <div class="img-preview-box">
+                                <img id="charImage" src="" alt="" style="display:none;">
+                            </div>
+                        </div>
+
+                        <div class="form-col col-12 edit-only">
+                            <div class="input-group">
+                                <span class="input-group-text" style="background:#440000; color:#ffdddd;">編集パスワード</span>
+                                <input type="text" name="editPassword" placeholder="設定すると他者との共有時に使用できます">
+                            </div>
+                        </div>
                     </div>
-                    <div class="acquired-skills-wrapper">
-                        <table id="acquiredSkillsTable">
-                            <thead><tr><th>習得特技 / 判定</th></tr></thead>
-                            <tbody id="acquiredSkillsList"></tbody>
-                        </table>
+                </div>
+
+                <!-- Skills -->
+                <div class="card">
+                    <h2>特技</h2>
+                    <div class="skill-controls">
+                        <label><input type="radio" name="mode" value="setting" checked> 設定（習得）</label>
+                        <label style="margin-left:1rem;"><input type="radio" name="mode" value="judgment"> 判定</label>
+                        <span style="float:right; color:#aaa; font-size:0.8rem;">A-Eをクリックでギャップ閉鎖</span>
+                    </div>
+                    <div class="skill-container">
+                        <div class="skill-grid-wrapper">
+                            <table id="skillGrid">
+                                <thead>
+                                    <tr>
+                                        <th>器術</th>
+                                        <th class="spacer-col-header" data-gap="0">A</th>
+                                        <th>体術</th>
+                                        <th class="spacer-col-header" data-gap="1">B</th>
+                                        <th>忍術</th>
+                                        <th class="spacer-col-header" data-gap="2">C</th>
+                                        <th>謀術</th>
+                                        <th class="spacer-col-header" data-gap="3">D</th>
+                                        <th>戦術</th>
+                                        <th class="spacer-col-header" data-gap="4">E</th>
+                                        <th>妖術</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="skillGridBody"></tbody>
+                            </table>
+                        </div>
+                        <div class="acquired-skills-wrapper">
+                            <table id="acquiredSkillsTable">
+                                <thead>
+                                    <tr>
+                                        <th>習得特技 / 判定</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="acquiredSkillsList"></tbody>
+                            </table>
+                        </div>
                     </div>
                 </div>
-            </div>
 
-            <!-- Ninpo -->
-            <div class="card">
-                <h2>忍法</h2>
-                <div id="ninpoContainer"></div>
-                <button type="button" class="btn-add edit-only" onclick="addDynamicRow('ninpo')">+ 忍法追加</button>
-            </div>
-
-            <!-- Background -->
-            <div class="card">
-                <h2>背景</h2>
-                <div id="backgroundContainer"></div>
-                <button type="button" class="btn-add edit-only" onclick="addDynamicRow('background')">+ 背景追加</button>
-            </div>
-
-             <!-- Person -->
-             <div class="card">
-                <h2>人物 (感情など)</h2>
-                <div id="personContainer"></div>
-                <button type="button" class="btn-add edit-only" onclick="addDynamicRow('person')">+ 人物追加</button>
-            </div>
-            
-             <!-- Tools -->
-             <div class="card">
-                <h2>忍具</h2>
-                <div id="toolContainer"></div>
-                <button type="button" class="btn-add edit-only" onclick="addDynamicRow('tool')">+ 忍具追加</button>
-            </div>
-
-            <!-- Secrets -->
-            <div id="secretCard" class="card hidden">
-                <h2>奥義・秘密</h2>
-                <div id="secretContent">
-                    <h3>奥義</h3>
-                    <div id="ougiContainer"></div>
-                    <button type="button" class="btn-add edit-only" onclick="addDynamicRow('ougi')">+ 奥義追加</button>
-                    <h3>秘密</h3>
-                    <textarea name="secret" rows="5" placeholder="秘密情報を入力"></textarea>
+                <!-- Ninpo -->
+                <div class="card">
+                    <h2>忍法</h2>
+                    <div id="ninpoContainer"></div>
+                    <button type="button" class="btn-add edit-only" onclick="addDynamicRow('ninpo')">+ 忍法追加</button>
                 </div>
-            </div>
 
-            <div class="card button-area edit-only">
-                <button type="button" id="saveBtn">サーバーに保存する</button>
-                <button type="button" id="cancelBtn" class="secondary">キャンセル</button>
-            </div>
-        </form>
-    </div>
-</main>
+                <!-- Background -->
+                <div class="card">
+                    <h2>背景</h2>
+                    <div id="backgroundContainer"></div>
+                    <button type="button" class="btn-add edit-only" onclick="addDynamicRow('background')">+
+                        背景追加</button>
+                </div>
 
-<div id="passwordModal" class="modal-overlay">
-    <div class="modal">
-        <h3>パスワード入力</h3>
-        <p>閲覧するには編集パスワードを入力してください。</p>
-        <input type="password" id="unlockPassInput" style="margin-bottom:1rem;">
-        <div class="modal-buttons">
-            <button id="unlockConfirmBtn">解除</button>
-            <button onclick="document.getElementById('passwordModal').style.display='none'" class="secondary">キャンセル</button>
+                <!-- Person -->
+                <div class="card">
+                    <h2>人物 (感情など)</h2>
+                    <div id="personContainer"></div>
+                    <button type="button" class="btn-add edit-only" onclick="addDynamicRow('person')">+ 人物追加</button>
+                </div>
+
+                <!-- Tools -->
+                <div class="card">
+                    <h2>忍具</h2>
+                    <div id="toolContainer"></div>
+                    <button type="button" class="btn-add edit-only" onclick="addDynamicRow('tool')">+ 忍具追加</button>
+                </div>
+
+                <!-- Secrets -->
+                <div id="secretCard" class="card hidden">
+                    <h2>奥義・秘密</h2>
+                    <div id="secretContent">
+                        <h3>奥義</h3>
+                        <div id="ougiContainer"></div>
+                        <button type="button" class="btn-add edit-only" onclick="addDynamicRow('ougi')">+ 奥義追加</button>
+                        <h3>秘密</h3>
+                        <textarea name="secret" rows="5" placeholder="秘密情報を入力"></textarea>
+                    </div>
+                </div>
+
+                <div class="card button-area edit-only">
+                    <button type="button" id="saveBtn">サーバーに保存する</button>
+                    <button type="button" id="cancelBtn" class="secondary">キャンセル</button>
+                </div>
+            </form>
+        </div>
+    </main>
+
+    <div id="passwordModal" class="modal-overlay">
+        <div class="modal">
+            <h3>パスワード入力</h3>
+            <p>閲覧するには編集パスワードを入力してください。</p>
+            <input type="password" id="unlockPassInput" style="margin-bottom:1rem;">
+            <div class="modal-buttons">
+                <button id="unlockConfirmBtn">解除</button>
+                <button onclick="document.getElementById('passwordModal').style.display='none'"
+                    class="secondary">キャンセル</button>
+            </div>
         </div>
     </div>
-</div>
 
-<div id="deleteModal" class="modal-overlay">
-    <div class="modal">
-        <h3>警告</h3>
-        <p>サーバーから完全に削除しますか？</p>
-        <div class="modal-buttons">
-            <button id="deleteConfirmBtn" class="btn-danger">はい、削除します</button>
-            <button id="deleteCancelBtn" class="secondary">いいえ</button>
+    <div id="deleteModal" class="modal-overlay">
+        <div class="modal">
+            <h3>警告</h3>
+            <p>サーバーから完全に削除しますか？</p>
+            <div class="modal-buttons">
+                <button id="deleteConfirmBtn" class="btn-danger">はい、削除します</button>
+                <button id="deleteCancelBtn" class="secondary">いいえ</button>
+            </div>
         </div>
     </div>
-</div>
 
-<div id="toastNotification" class="toast-notification">メッセージ</div>
+    <!-- Palette Modal -->
+    <div id="paletteModal" class="modal-overlay">
+        <div class="palette-modal-content">
+            <h3 class="color-palette-header">チャパレ生成</h3>
+            <p>現在表示中のキャラクターシートからCCFOLIAなどで利用で<br>きるチャットパレットを生成します</p>
+            <h2 id="paletteCharName" style="margin: 1rem 0; color: #333;"></h2>
+            <textarea id="paletteText" class="palette-textarea" readonly></textarea>
+            <div class="palette-actions">
+                <button id="paletteCopyBtn" class="btn-copy">📋 コピー</button>
+                <button id="paletteDlBtn" class="btn-dl">📥 DL</button>
+                <button id="paletteKomaBtn" class="btn-koma-blue">👤 コマ出力</button>
+            </div>
+            <div style="margin-top: 1rem;">
+                <button onclick="document.getElementById('paletteModal').style.display='none'"
+                    class="secondary">閉じる</button>
+            </div>
+        </div>
+    </div>
 
-<script>
-// --- Constants ---
-const SKILL_GRID_DATA=[['絡繰術','騎乗術','生存術','医術','兵糧術','異形化'],['火術','砲術','潜伏術','毒術','鳥獣術','召喚術'],['水術','手裏剣術','遁走術','罠術','野戦術','死霊術'],['針術','手練','隠蔽術','調査術','地の利','結界術'],['仕込み','身体操術','隠形術','詐術','意気','封術'],['衣装術','歩法','隠密術','対人術','用兵術','言霊術'],['縄術','走法','変装術','遊芸','記憶術','幻術'],['登術','飛術','香術','九ノ一の術','見敵術','瞳術'],['拷問術','骨法術','分身の術','傀儡の術','暗号術','千里眼の術'],['鍵術','刀術','隠語術','流言の術','伝達術','憑依術'],['掘削術','怪力','第六感','経済力','人脈','呪術']];
-const EMOTIONS={'+':['共感','友情','愛情','忠誠','憧憬','狂信'],'-':['不信','怒り','妬み','侮蔑','劣等感','殺意']};
-const DYNAMIC_SCHEMAS={ninpo:[{key:'name',placeholder:'忍法名',width:'20%'},{key:'type',placeholder:'分類',width:'15%',options:['攻撃','サポート','装備']},{key:'gap',placeholder:'間合',width:'10%'},{key:'cost',placeholder:'コスト',width:'11%'},{key:'effect',placeholder:'効果',width:'100%'}],background:[{key:'name',placeholder:'背景',width:'20%'},{key:'type',placeholder:'種別',width:'11%',options:['長所','弱点']},{key:'merit',placeholder:'功績点',width:'10%'},{key:'effect',placeholder:'効果',width:'50%'},{key:'page',placeholder:'参照p',width:'10%'}],person:[{key:'name',placeholder:'人物名',width:'30%'},{key:'location',placeholder:'居所',type:'checkbox',width:'6%'},{key:'secret',placeholder:'秘密',type:'checkbox',width:'6%'},{key:'ougi',placeholder:'奥義',type:'checkbox',width:'6%'},{key:'emotion_type',placeholder:'+/-',width:'10%',options:['+','-'],onchange:'updateEmotionOptions(this)'},{key:'emotion',placeholder:'感情',width:'20%',options:[]},{key:'note',placeholder:'備考',width:'20%'}],tool:[{key:'name',placeholder:'名前',width:'30%'},{key:'Quantity',placeholder:'個数',width:'15%'},{key:'MeritPoints',placeholder:'功績点',width:'15%'},{key:'effect',placeholder:'効果',width:'40%'}],ougi:[{key:'name',placeholder:'奥義名',width:'15%'},{key:'type',placeholder:'指定特技',width:'15%'},{key:'type',placeholder:'効果/強み/弱み',width:'30%'},{key:'effect',placeholder:'演出',width:'30%'}]};
+    <div id="toastNotification" class="toast-notification">メッセージ</div>
 
-// --- State ---
-let currentDocId = null;
-let currentMode = 'list';
-let gapStates = [false, false, false, false, false];
-let acquiredSkills = new Set();
-let isRegisterMode = false;
-let currentCharacterData = null;
+    <script>
+        // --- Constants ---
+        const SKILL_GRID_DATA = [['絡繰術', '騎乗術', '生存術', '医術', '兵糧術', '異形化'], ['火術', '砲術', '潜伏術', '毒術', '鳥獣術', '召喚術'], ['水術', '手裏剣術', '遁走術', '罠術', '野戦術', '死霊術'], ['針術', '手練', '隠蔽術', '調査術', '地の利', '結界術'], ['仕込み', '身体操術', '隠形術', '詐術', '意気', '封術'], ['衣装術', '歩法', '隠密術', '対人術', '用兵術', '言霊術'], ['縄術', '走法', '変装術', '遊芸', '記憶術', '幻術'], ['登術', '飛術', '香術', '九ノ一の術', '見敵術', '瞳術'], ['拷問術', '骨法術', '分身の術', '傀儡の術', '暗号術', '千里眼の術'], ['鍵術', '刀術', '隠語術', '流言の術', '伝達術', '憑依術'], ['掘削術', '怪力', '第六感', '経済力', '人脈', '呪術']];
+        const EMOTIONS = { '+': ['共感', '友情', '愛情', '忠誠', '憧憬', '狂信'], '-': ['不信', '怒り', '妬み', '侮蔑', '劣等感', '殺意'] };
+        const DYNAMIC_SCHEMAS = { ninpo: [{ key: 'name', placeholder: '忍法名', width: '16%' }, { key: 'type', placeholder: '分類', width: '10%', options: ['攻撃', 'サポート', '装備'] }, { key: 'designated_skill', placeholder: '指定特技', width: '14%' }, { key: 'gap', placeholder: '間合', width: '8%' }, { key: 'cost', placeholder: 'コスト', width: '8%' }, { key: 'effect', placeholder: '効果', width: '34%' }, { key: 'page', placeholder: '参照p', width: '10%' }], background: [{ key: 'name', placeholder: '背景', width: '20%' }, { key: 'type', placeholder: '種別', width: '11%', options: ['長所', '弱点'] }, { key: 'merit', placeholder: '功績点', width: '10%' }, { key: 'effect', placeholder: '効果', width: '50%' }, { key: 'page', placeholder: '参照p', width: '10%' }], person: [{ key: 'name', placeholder: '人物名', width: '30%' }, { key: 'location', placeholder: '居所', type: 'checkbox', width: '6%' }, { key: 'secret', placeholder: '秘密', type: 'checkbox', width: '6%' }, { key: 'ougi', placeholder: '奥義', type: 'checkbox', width: '6%' }, { key: 'emotion_type', placeholder: '+/-', width: '10%', options: ['+', '-'], onchange: 'updateEmotionOptions(this)' }, { key: 'emotion', placeholder: '感情', width: '20%', options: [] }, { key: 'note', placeholder: '備考', width: '20%' }], tool: [{ key: 'name', placeholder: '名前', width: '30%' }, { key: 'Quantity', placeholder: '個数', width: '15%' }, { key: 'MeritPoints', placeholder: '功績点', width: '15%' }, { key: 'effect', placeholder: '効果', width: '40%' }], ougi: [{ key: 'name', placeholder: '奥義名', width: '15%' }, { key: 'type', placeholder: '指定特技', width: '15%' }, { key: 'type', placeholder: '効果/強み/弱み', width: '30%' }, { key: 'effect', placeholder: '演出', width: '30%' }] };
 
-// --- Init ---
-document.addEventListener('DOMContentLoaded', () => {
-    if (!window.location.hash) window.location.hash = '#login';
-    handleHashChange();
-});
+        // --- State ---
+        let currentDocId = null;
+        let currentMode = 'list';
+        let gapStates = [false, false, false, false, false];
+        let acquiredSkills = new Set();
+        let isRegisterMode = false;
+        let currentCharacterData = null;
 
-// --- Routing ---
-window.addEventListener('hashchange', handleHashChange);
+        // --- Init ---
+        document.addEventListener('DOMContentLoaded', () => {
+            if (!window.location.hash) window.location.hash = '#login';
+            handleHashChange();
+        });
 
-async function handleHashChange() {
-    const hash = window.location.hash.substring(1);
-    const [route, paramStr] = hash.split('?');
-    const params = new URLSearchParams(paramStr);
-    const id = params.get('id');
+        // --- Routing ---
+        window.addEventListener('hashchange', handleHashChange);
 
-    ['page-login', 'page-admin', 'page-list', 'page-form'].forEach(pid => document.getElementById(pid).classList.add('hidden'));
-    
-    const header = document.getElementById('appHeader');
-    document.getElementById('unlockSecretHeaderBtn').classList.add('hidden'); 
+        async function handleHashChange() {
+            const hash = window.location.hash.substring(1);
+            const [route, paramStr] = hash.split('?');
+            const params = new URLSearchParams(paramStr);
+            const id = params.get('id');
 
-    if (route === 'login') {
-        header.classList.add('hidden');
-    } else {
-        header.classList.remove('hidden');
-        document.getElementById('headerUsername').textContent = window.currentUser ? `User: ${window.currentUser.username}` : 'Guest Mode';
-        
-        if (window.currentUser) {
-            document.getElementById('logoutBtn').classList.remove('hidden');
-            document.getElementById('loginLinkBtn').classList.add('hidden');
-            document.getElementById('homeBtn').classList.remove('hidden');
-            if (window.currentUser.role === 'admin') document.getElementById('adminBtn').classList.remove('hidden');
-            else document.getElementById('adminBtn').classList.add('hidden');
-        } else {
-            document.getElementById('logoutBtn').classList.add('hidden');
-            document.getElementById('loginLinkBtn').classList.remove('hidden');
-            document.getElementById('homeBtn').classList.add('hidden');
-            document.getElementById('adminBtn').classList.add('hidden');
+            ['page-login', 'page-admin', 'page-list', 'page-form'].forEach(pid => document.getElementById(pid).classList.add('hidden'));
+
+            const header = document.getElementById('appHeader');
+            document.getElementById('unlockSecretHeaderBtn').classList.add('hidden');
+
+            if (route === 'login') {
+                header.classList.add('hidden');
+            } else {
+                header.classList.remove('hidden');
+                document.getElementById('headerUsername').textContent = window.currentUser ? `User: ${window.currentUser.username}` : 'Guest Mode';
+
+                if (window.currentUser) {
+                    document.getElementById('logoutBtn').classList.remove('hidden');
+                    document.getElementById('loginLinkBtn').classList.add('hidden');
+                    document.getElementById('homeBtn').classList.remove('hidden');
+                    if (window.currentUser.role === 'admin') document.getElementById('adminBtn').classList.remove('hidden');
+                    else document.getElementById('adminBtn').classList.add('hidden');
+                } else {
+                    document.getElementById('logoutBtn').classList.add('hidden');
+                    document.getElementById('loginLinkBtn').classList.remove('hidden');
+                    document.getElementById('homeBtn').classList.add('hidden');
+                    document.getElementById('adminBtn').classList.add('hidden');
+                }
+            }
+
+            if (route === 'login') {
+                document.getElementById('page-login').classList.remove('hidden');
+            } else if (route === 'admin') {
+                if (!window.currentUser || window.currentUser.role !== 'admin') { window.location.hash = '#login'; return; }
+                document.getElementById('page-admin').classList.remove('hidden');
+                loadAdminData();
+            } else if (route === 'list' || route === '') {
+                if (!window.currentUser) { window.location.hash = '#login'; return; }
+                document.getElementById('page-list').classList.remove('hidden');
+                loadCharacterList();
+            } else if (route === 'edit') {
+                if (!window.currentUser) { window.location.hash = '#login'; return; }
+                currentMode = 'edit';
+                document.getElementById('page-form').classList.remove('hidden');
+                document.body.classList.remove('view-mode');
+                document.body.classList.add('edit-mode');
+                setupFormForEdit(id);
+            } else if (route === 'view') {
+                currentMode = 'view';
+                document.getElementById('page-form').classList.remove('hidden');
+                document.body.classList.remove('edit-mode');
+                document.body.classList.add('view-mode');
+                setupFormForView(id);
+            }
+
+            // Toggle Edit Mode Elements
+            document.querySelectorAll('.edit-only').forEach(el => el.style.display = currentMode === 'edit' ? '' : 'none');
+
+            // View Mode Readonly
+            const form = document.getElementById('charForm');
+            form.querySelectorAll('input, textarea, select').forEach(input => {
+                if (input.id === 'searchInput' || input.id === 'unlockPassInput') return;
+                input.disabled = (currentMode === 'view');
+            });
         }
-    }
 
-    if (route === 'login') {
-        document.getElementById('page-login').classList.remove('hidden');
-    } else if (route === 'admin') {
-        if (!window.currentUser || window.currentUser.role !== 'admin') { window.location.hash = '#login'; return; }
-        document.getElementById('page-admin').classList.remove('hidden');
-        loadAdminData();
-    } else if (route === 'list' || route === '') {
-        if (!window.currentUser) { window.location.hash = '#login'; return; }
-        document.getElementById('page-list').classList.remove('hidden');
-        loadCharacterList();
-    } else if (route === 'edit') {
-        if (!window.currentUser) { window.location.hash = '#login'; return; }
-        currentMode = 'edit';
-        document.getElementById('page-form').classList.remove('hidden');
-        document.body.classList.remove('view-mode');
-        document.body.classList.add('edit-mode');
-        setupFormForEdit(id);
-    } else if (route === 'view') {
-        currentMode = 'view';
-        document.getElementById('page-form').classList.remove('hidden');
-        document.body.classList.remove('edit-mode');
-        document.body.classList.add('view-mode');
-        setupFormForView(id);
-    }
-    
-    // Toggle Edit Mode Elements
-    document.querySelectorAll('.edit-only').forEach(el => el.style.display = currentMode === 'edit' ? '' : 'none');
-    
-    // View Mode Readonly
-    const form = document.getElementById('charForm');
-    form.querySelectorAll('input, textarea, select').forEach(input => {
-        if(input.id === 'searchInput' || input.id === 'unlockPassInput') return;
-        input.disabled = (currentMode === 'view');
-    });
-}
+        // --- Auth UI Logic ---
+        document.getElementById('authToggleBtn').addEventListener('click', () => {
+            isRegisterMode = !isRegisterMode;
+            const title = document.getElementById('authTitle');
+            const btn = document.getElementById('authActionBtn');
+            const toggle = document.getElementById('authToggleBtn');
+            const req = document.getElementById('regReq');
+            if (isRegisterMode) {
+                title.textContent = "新規登録"; btn.textContent = "登録してログイン"; toggle.textContent = "ログインはこちら"; req.classList.remove('hidden');
+            } else {
+                title.textContent = "サーバーログイン"; btn.textContent = "ログイン"; toggle.textContent = "アカウント作成はこちら"; req.classList.add('hidden');
+            }
+        });
 
-// --- Auth UI Logic ---
-document.getElementById('authToggleBtn').addEventListener('click', () => {
-    isRegisterMode = !isRegisterMode;
-    const title = document.getElementById('authTitle');
-    const btn = document.getElementById('authActionBtn');
-    const toggle = document.getElementById('authToggleBtn');
-    const req = document.getElementById('regReq');
-    if (isRegisterMode) {
-        title.textContent = "新規登録"; btn.textContent = "登録してログイン"; toggle.textContent = "ログインはこちら"; req.classList.remove('hidden');
-    } else {
-        title.textContent = "サーバーログイン"; btn.textContent = "ログイン"; toggle.textContent = "アカウント作成はこちら"; req.classList.add('hidden');
-    }
-});
+        function toggleAuthPassword() {
+            const input = document.getElementById('authPassword');
+            const icon = document.getElementById('authPassIcon');
+            const isPass = input.type === "password";
+            input.type = isPass ? "text" : "password";
 
-function toggleAuthPassword() {
-    const input = document.getElementById('authPassword');
-    const icon = document.getElementById('authPassIcon');
-    const isPass = input.type === "password";
-    input.type = isPass ? "text" : "password";
-    
-    if (isPass) {
-        icon.innerHTML = `<svg viewBox="0 0 24 24"><path d="M12 7c2.76 0 5 2.24 5 5 0 .65-.13 1.26-.36 1.83l2.92 2.92c1.51-1.26 2.7-2.89 3.43-4.75-1.73-4.39-6-7.5-11-7.5-1.4 0-2.74.25-3.98.7l2.16 2.16C10.74 7.13 11.35 7 12 7zM2 4.27l2.28 2.28.46.46C3.08 8.3 1.78 10.02 1 12c1.73 4.39 6 7.5 11 7.5 1.55 0 3.03-.3 4.38-.84l.42.42L19.73 22 21 20.73 3.27 3 2 4.27zM7.53 9.8l1.55 1.55c-.05.21-.08.43-.08.65 0 1.66 1.34 3 3 3 .22 0 .44-.03.65-.08l1.55 1.55c-.67.33-1.41.53-2.2.53-2.76 0-5-2.24-5-5 0-.79.2-1.53.53-2.2zm4.31-.78l3.15 3.15.02-.16c0-1.66-1.34-3-3-3l-.17.01z"/></svg>`;
-    } else {
-        icon.innerHTML = `<svg viewBox="0 0 24 24"><path d="M12 4.5C7 4.5 2.73 7.61 1 12c1.73 4.39 6 7.5 11 7.5s9.27-3.11 11-7.5c-1.73-4.39-6-7.5-11-7.5zM12 17c-2.76 0-5-2.24-5-5s2.24-5 5-5 5 2.24 5 5-2.24 5-5 5zm0-8c-1.66 0-3 1.34-3 3s1.34 3 3 3 3-1.34 3-3-1.34-3-3-3z"/></svg>`;
-    }
-}
-window.toggleAuthPassword = toggleAuthPassword;
+            if (isPass) {
+                icon.innerHTML = `<svg viewBox="0 0 24 24"><path d="M12 7c2.76 0 5 2.24 5 5 0 .65-.13 1.26-.36 1.83l2.92 2.92c1.51-1.26 2.7-2.89 3.43-4.75-1.73-4.39-6-7.5-11-7.5-1.4 0-2.74.25-3.98.7l2.16 2.16C10.74 7.13 11.35 7 12 7zM2 4.27l2.28 2.28.46.46C3.08 8.3 1.78 10.02 1 12c1.73 4.39 6 7.5 11 7.5 1.55 0 3.03-.3 4.38-.84l.42.42L19.73 22 21 20.73 3.27 3 2 4.27zM7.53 9.8l1.55 1.55c-.05.21-.08.43-.08.65 0 1.66 1.34 3 3 3 .22 0 .44-.03.65-.08l1.55 1.55c-.67.33-1.41.53-2.2.53-2.76 0-5-2.24-5-5 0-.79.2-1.53.53-2.2zm4.31-.78l3.15 3.15.02-.16c0-1.66-1.34-3-3-3l-.17.01z"/></svg>`;
+            } else {
+                icon.innerHTML = `<svg viewBox="0 0 24 24"><path d="M12 4.5C7 4.5 2.73 7.61 1 12c1.73 4.39 6 7.5 11 7.5s9.27-3.11 11-7.5c-1.73-4.39-6-7.5-11-7.5zM12 17c-2.76 0-5-2.24-5-5s2.24-5 5-5 5 2.24 5 5-2.24 5-5 5zm0-8c-1.66 0-3 1.34-3 3s1.34 3 3 3 3-1.34 3-3-1.34-3-3-3z"/></svg>`;
+            }
+        }
+        window.toggleAuthPassword = toggleAuthPassword;
 
-document.getElementById('authActionBtn').addEventListener('click', async () => {
-    const u = document.getElementById('authUsername').value.trim();
-    const p = document.getElementById('authPassword').value.trim();
-    if (!u || !p) return showToast("ユーザー名とパスワードを入力してください");
-    if (isRegisterMode) {
-        const res = await window.createUserWithEmailAndPassword(u, p);
-        if (res.success) {
-            showToast("登録しました。ログインします...");
-            const loginRes = await window.signInWithEmailAndPassword(u, p);
-            if (loginRes.success) window.location.hash = '#list';
-        } else { showToast(res.message); }
-    } else {
-        const res = await window.signInWithEmailAndPassword(u, p);
-        if (res.success) window.location.hash = res.role === 'admin' ? '#admin' : '#list';
-        else showToast(res.message);
-    }
-});
-document.getElementById('logoutBtn').addEventListener('click', () => window.app_logout());
+        document.getElementById('authActionBtn').addEventListener('click', async () => {
+            const u = document.getElementById('authUsername').value.trim();
+            const p = document.getElementById('authPassword').value.trim();
+            if (!u || !p) return showToast("ユーザー名とパスワードを入力してください");
+            if (isRegisterMode) {
+                const res = await window.app_register(u, p);
+                if (res.success) {
+                    showToast("登録しました。ログインします...");
+                    const loginRes = await window.app_login(u, p);
+                    if (loginRes.success) window.location.hash = '#list';
+                } else { showToast(res.message); }
+            } else {
+                const res = await window.app_login(u, p);
+                if (res.success) window.location.hash = res.role === 'admin' ? '#admin' : '#list';
+                else showToast(res.message);
+            }
+        });
+        document.getElementById('logoutBtn').addEventListener('click', () => window.app_logout());
 
-// --- Unlock Logic ---
-document.getElementById('unlockSecretHeaderBtn').addEventListener('click', () => {
-    document.getElementById('unlockPassInput').value = '';
-    document.getElementById('passwordModal').style.display = 'flex';
-});
+        // --- Unlock Logic ---
+        document.getElementById('unlockSecretHeaderBtn').addEventListener('click', () => {
+            document.getElementById('unlockPassInput').value = '';
+            document.getElementById('passwordModal').style.display = 'flex';
+        });
 
-document.getElementById('unlockConfirmBtn').addEventListener('click', () => {
-    const input = document.getElementById('unlockPassInput').value;
-    if (currentCharacterData && input === currentCharacterData.editPassword) {
-        document.getElementById('secretCard').classList.remove('hidden');
-        document.getElementById('unlockSecretHeaderBtn').classList.add('hidden'); 
-        renderDynamicTable('ougi', currentCharacterData.ougi || []);
-        document.getElementById('passwordModal').style.display = 'none';
-        showToast("ロックを解除しました");
-    } else {
-        showToast("パスワードが違います");
-    }
-});
+        document.getElementById('unlockConfirmBtn').addEventListener('click', () => {
+            const input = document.getElementById('unlockPassInput').value;
+            if (currentCharacterData && input === currentCharacterData.editPassword) {
+                document.getElementById('secretCard').classList.remove('hidden');
+                document.getElementById('unlockSecretHeaderBtn').classList.add('hidden');
+                renderDynamicTable('ougi', currentCharacterData.ougi || []);
+                document.getElementById('passwordModal').style.display = 'none';
+                showToast("ロックを解除しました");
+            } else {
+                showToast("パスワードが違います");
+            }
+        });
 
-// --- List Logic ---
-async function loadCharacterList() {
-    const container = document.getElementById('charListContainer');
-    container.innerHTML = '<p class="text-center">データを読み込み中...</p>';
-    const chars = await window.app_loadCharacters();
-    renderList(chars);
-    document.getElementById('searchInput').oninput = (e) => {
-        const term = e.target.value.toLowerCase();
-        renderList(chars.filter(c => (c.name || '').toLowerCase().includes(term)));
-    };
-}
+        // --- List Logic ---
+        async function loadCharacterList() {
+            const container = document.getElementById('charListContainer');
+            container.innerHTML = '<p class="text-center">データを読み込み中...</p>';
+            const chars = await window.app_loadCharacters();
+            renderList(chars);
+            document.getElementById('searchInput').oninput = (e) => {
+                const term = e.target.value.toLowerCase();
+                renderList(chars.filter(c => (c.name || '').toLowerCase().includes(term)));
+            };
+        }
 
-function renderList(chars) {
-    const container = document.getElementById('charListContainer');
-    container.innerHTML = '';
-    if (chars.length === 0) { container.innerHTML = '<p class="text-center">キャラクターがいません</p>'; return; }
-    chars.forEach(char => {
-        const item = document.createElement('div');
-        item.className = 'char-item';
-        const imgSrc = char.image || 'data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAxMDAgMTAwIiBmaWxsPSIjNTU1Ij48cmVjdCB3aWR0aD0iMTAwIiBoZWlnaHQ9IjEwMCIvPjwvc3ZnPg==';
-        item.innerHTML = `
+        function renderList(chars) {
+            const container = document.getElementById('charListContainer');
+            container.innerHTML = '';
+            if (chars.length === 0) { container.innerHTML = '<p class="text-center">キャラクターがいません</p>'; return; }
+            chars.forEach(char => {
+                const item = document.createElement('div');
+                item.className = 'char-item';
+                const imgSrc = char.image || 'data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAxMDAgMTAwIiBmaWxsPSIjNTU1Ij48cmVjdCB3aWR0aD0iMTAwIiBoZWlnaHQ9IjEwMCIvPjwvc3ZnPg==';
+                item.innerHTML = `
             <img src="${imgSrc}" class="char-thumb">
             <div class="char-info"><div class="char-name">${char.name || '名称未設定'}</div><div class="char-meta">${char.substyle || '-'} / ${char.player || '-'}</div></div>
             <div class="char-actions">
                 <button onclick="location.hash='#edit?id=${char.id}'">編集</button>
                 <button onclick="location.hash='#view?id=${char.id}'" class="secondary">閲覧</button>
+                <button onclick="copyCharacter('${char.id}')" class="secondary">コピー</button>
+                <button onclick="openPalette('${char.id}')" class="secondary">チャットパレット</button>
                 <button onclick="confirmDelete('${char.id}')" class="btn-danger">削除</button>
             </div>
         `;
-        container.appendChild(item);
-    });
-}
-
-// --- Edit/View Form Logic ---
-async function setupFormForEdit(id) {
-    resetForm();
-    if (id) { currentDocId = id; await loadCharacterData(id); }
-    else { currentDocId = null; createSkillGrid(); Object.keys(DYNAMIC_SCHEMAS).forEach(key => renderDynamicTable(key, [])); }
-}
-
-async function setupFormForView(id) {
-    resetForm();
-    currentDocId = id;
-    await loadCharacterData(id);
-}
-
-function resetForm() {
-    document.getElementById('charForm').reset();
-    document.getElementById('charImage').src = "";
-    document.getElementById('charImage').style.display = "none";
-    document.getElementById('deleteImageBtn').style.display = "none";
-    document.getElementById('acquiredSkillsList').innerHTML = "";
-    document.getElementById('secretCard').classList.remove('hidden'); 
-    acquiredSkills.clear();
-    gapStates = [false, false, false, false, false];
-    document.querySelector('input[name="mode"][value="setting"]').checked = true;
-    createSkillGrid(); 
-}
-
-async function loadCharacterData(id) {
-    const data = await window.app_getCharacter(id);
-    if (!data) {
-        showToast("データが見つかりません");
-        if(window.currentUser) window.location.hash = '#list'; else window.location.hash = '#login';
-        return;
-    }
-    currentCharacterData = data;
-    
-    const isOwner = window.currentUser && (window.currentUser.username === data.owner);
-    const isAdmin = window.currentUser && (window.currentUser.role === 'admin');
-    const canSeeSecrets = isOwner || isAdmin;
-    
-    if (canSeeSecrets || currentMode === 'edit') {
-        document.getElementById('secretCard').classList.remove('hidden');
-        document.getElementById('unlockSecretHeaderBtn').classList.add('hidden');
-    } else {
-        document.getElementById('secretCard').classList.add('hidden');
-        if (data.editPassword) {
-            document.getElementById('unlockSecretHeaderBtn').classList.remove('hidden');
-        } else {
-             document.getElementById('unlockSecretHeaderBtn').classList.add('hidden');
+                container.appendChild(item);
+            });
         }
-    }
 
-    const form = document.getElementById('charForm');
-    Object.keys(data).forEach(key => {
-        if (form.elements[key] && key !== 'image' && key !== 'mode') form.elements[key].value = data[key];
-    });
-    
-    if (data.image) {
-        document.getElementById('charImage').src = data.image;
-        document.getElementById('charImage').style.display = 'block';
-        if (currentMode === 'edit') document.getElementById('deleteImageBtn').style.display = 'block';
-    }
-    
-    if (data.gapStates) gapStates = data.gapStates;
-    createSkillGrid();
-    
-    if (data.skills) {
-        data.skills.forEach(skill => {
-            acquiredSkills.add(skill);
-            addSkillToList(skill);
-            const cell = document.querySelector(`td[data-skill="${skill}"]`);
-            if(cell) cell.classList.add('selected');
+        // --- Edit/View Form Logic ---
+        async function setupFormForEdit(id) {
+            resetForm();
+            if (id) { currentDocId = id; await loadCharacterData(id); }
+            else { currentDocId = null; createSkillGrid(); Object.keys(DYNAMIC_SCHEMAS).forEach(key => renderDynamicTable(key, [])); }
+        }
+
+        async function setupFormForView(id) {
+            resetForm();
+            currentDocId = id;
+            await loadCharacterData(id);
+        }
+
+        function resetForm() {
+            document.getElementById('charForm').reset();
+            document.getElementById('charImage').src = "";
+            document.getElementById('charImage').style.display = "none";
+            document.getElementById('deleteImageBtn').style.display = "none";
+            document.getElementById('acquiredSkillsList').innerHTML = "";
+            document.getElementById('secretCard').classList.remove('hidden');
+            acquiredSkills.clear();
+            gapStates = [false, false, false, false, false];
+            document.querySelector('input[name="mode"][value="setting"]').checked = true;
+            createSkillGrid();
+        }
+
+        async function loadCharacterData(id) {
+            const data = await window.app_getCharacter(id);
+            if (!data) {
+                showToast("データが見つかりません");
+                if (window.currentUser) window.location.hash = '#list'; else window.location.hash = '#login';
+                return;
+            }
+            currentCharacterData = data;
+
+            const isOwner = window.currentUser && (window.currentUser.username === data.owner);
+            const isAdmin = window.currentUser && (window.currentUser.role === 'admin');
+            const canSeeSecrets = isOwner || isAdmin;
+
+            if (canSeeSecrets || currentMode === 'edit') {
+                document.getElementById('secretCard').classList.remove('hidden');
+                document.getElementById('unlockSecretHeaderBtn').classList.add('hidden');
+            } else {
+                document.getElementById('secretCard').classList.add('hidden');
+                if (data.editPassword) {
+                    document.getElementById('unlockSecretHeaderBtn').classList.remove('hidden');
+                } else {
+                    document.getElementById('unlockSecretHeaderBtn').classList.add('hidden');
+                }
+            }
+
+            const form = document.getElementById('charForm');
+            Object.keys(data).forEach(key => {
+                if (form.elements[key] && key !== 'image' && key !== 'mode') form.elements[key].value = data[key];
+            });
+
+            if (data.image) {
+                document.getElementById('charImage').src = data.image;
+                document.getElementById('charImage').style.display = 'block';
+                if (currentMode === 'edit') document.getElementById('deleteImageBtn').style.display = 'block';
+            }
+
+            if (data.gapStates) gapStates = data.gapStates;
+            createSkillGrid();
+
+            if (data.skills) {
+                data.skills.forEach(skill => {
+                    acquiredSkills.add(skill);
+                    addSkillToList(skill);
+                    const cell = document.querySelector(`td[data-skill="${skill}"]`);
+                    if (cell) cell.classList.add('selected');
+                });
+            }
+
+            Object.keys(DYNAMIC_SCHEMAS).forEach(key => {
+                if (key === 'ougi' && !canSeeSecrets && currentMode !== 'edit') {
+                    document.getElementById('ougiContainer').innerHTML = '';
+                } else {
+                    renderDynamicTable(key, data[key] || []);
+                }
+            });
+        }
+
+        document.getElementById('saveBtn').addEventListener('click', async () => {
+            // 忍法バリデーション
+            const ninpoData = getDynamicData('ninpo');
+            for (const n of ninpoData) {
+                if (!n.gap || !n.cost || !n.designated_skill) {
+                    showToast("忍法の指定特技、間合、コストは必須です");
+                    return;
+                }
+            }
+            const form = document.getElementById('charForm');
+            const formData = {};
+            [...form.elements].forEach(el => { if (el.name && el.name !== 'mode') formData[el.name] = el.value; });
+            const charImageSrc = document.getElementById('charImage').getAttribute('src');
+            formData.image = (charImageSrc && charImageSrc !== window.location.href) ? charImageSrc : "";
+            formData.skills = Array.from(acquiredSkills);
+            formData.gapStates = gapStates;
+            Object.keys(DYNAMIC_SCHEMAS).forEach(key => formData[key] = getDynamicData(key));
+            try { await window.app_saveCharacter(currentDocId, formData); showToast("サーバーに保存しました"); window.location.hash = '#list'; } catch (e) { showToast("保存失敗"); }
         });
-    }
-    
-    Object.keys(DYNAMIC_SCHEMAS).forEach(key => {
-        if (key === 'ougi' && !canSeeSecrets && currentMode !== 'edit') {
-            document.getElementById('ougiContainer').innerHTML = ''; 
-        } else {
-            renderDynamicTable(key, data[key] || []);
+
+        document.getElementById('createNewBtn').addEventListener('click', () => window.location.hash = '#edit');
+
+        // Admin & Delete
+        async function loadAdminData() {
+            const tbody = document.getElementById('adminUserListBody'); tbody.innerHTML = '<tr><td colspan="3">取得中...</td></tr>';
+            const users = await window.app_admin_getUsers(); tbody.innerHTML = '';
+            users.forEach(u => {
+                const tr = document.createElement('tr');
+                tr.innerHTML = `<td>${u.username} <span style="font-size:0.8rem; color:#aaa;">(${u.role})</span></td><td><input type="text" value="${u.password}" id="pass-${u.id}"></td><td class="admin-controls"><button class="btn-sm btn-success" onclick="adminUpdate('${u.id}')">更新</button>${u.role !== 'admin' ? `<button class="btn-sm btn-danger" onclick="adminDelete('${u.id}')">削除</button>` : ''}</td>`;
+                tbody.appendChild(tr);
+            });
         }
-    });
-}
+        window.adminUpdate = async (uid) => { await window.app_admin_updateUser(uid, document.getElementById(`pass-${uid}`).value); showToast("更新しました"); };
+        window.adminDelete = async (uid) => { if (!confirm("削除しますか？")) return; await window.app_admin_deleteUser(uid); loadAdminData(); showToast("削除しました"); };
 
-document.getElementById('saveBtn').addEventListener('click', async () => {
-    const form = document.getElementById('charForm');
-    const formData = {};
-    [...form.elements].forEach(el => { if (el.name && el.name !== 'mode') formData[el.name] = el.value; });
-    const charImageSrc = document.getElementById('charImage').getAttribute('src');
-    formData.image = (charImageSrc && charImageSrc !== window.location.href) ? charImageSrc : "";
-    formData.skills = Array.from(acquiredSkills);
-    formData.gapStates = gapStates;
-    Object.keys(DYNAMIC_SCHEMAS).forEach(key => formData[key] = getDynamicData(key));
-    try { await window.app_saveCharacter(currentDocId, formData); showToast("サーバーに保存しました"); window.location.hash = '#list'; } catch(e) { showToast("保存失敗"); }
-});
+        let deleteTargetId = null;
+        window.confirmDelete = (id) => { deleteTargetId = id; document.getElementById('deleteModal').style.display = 'flex'; };
 
-document.getElementById('createNewBtn').addEventListener('click', () => window.location.hash = '#edit');
+        // コピー機能
+        window.copyCharacter = async (charId) => {
+            try {
+                const data = await window.app_getCharacter(charId);
+                if (!data) {
+                    showToast("コピー元のデータが見つかりません");
+                    return;
+                }
+                // コピー用のデータを作成
+                const copyData = { ...data };
+                delete copyData.id; // IDを削除して新規作成扱いに
+                copyData.name = (data.name || '名称未設定') + 'のコピー';
 
-// Admin & Delete
-async function loadAdminData() {
-    const tbody = document.getElementById('adminUserListBody'); tbody.innerHTML = '<tr><td colspan="3">取得中...</td></tr>';
-    const users = await window.app_admin_getUsers(); tbody.innerHTML = '';
-    users.forEach(u => {
-        const tr = document.createElement('tr');
-        tr.innerHTML = `<td>${u.username} <span style="font-size:0.8rem; color:#aaa;">(${u.role})</span></td><td><input type="text" value="${u.password}" id="pass-${u.id}"></td><td class="admin-controls"><button class="btn-sm btn-success" onclick="adminUpdate('${u.id}')">更新</button>${u.role !== 'admin' ? `<button class="btn-sm btn-danger" onclick="adminDelete('${u.id}')">削除</button>` : ''}</td>`;
-        tbody.appendChild(tr);
-    });
-}
-window.adminUpdate = async (uid) => { await window.app_admin_updateUser(uid, document.getElementById(`pass-${uid}`).value); showToast("更新しました"); };
-window.adminDelete = async (uid) => { if(!confirm("削除しますか？")) return; await window.app_admin_deleteUser(uid); loadAdminData(); showToast("削除しました"); };
-
-let deleteTargetId = null;
-window.confirmDelete = (id) => { deleteTargetId = id; document.getElementById('deleteModal').style.display = 'flex'; };
-document.getElementById('deleteConfirmBtn').addEventListener('click', async () => {
-    if (deleteTargetId) { try { await window.app_deleteCharacter(deleteTargetId); showToast("削除しました"); document.getElementById('deleteModal').style.display = 'none'; loadCharacterList(); } catch(e) { showToast("削除失敗"); } }
-});
-document.getElementById('deleteCancelBtn').addEventListener('click', () => document.getElementById('deleteModal').style.display = 'none');
-document.getElementById('deleteImageBtn').addEventListener('click', () => { document.getElementById('charImage').src=""; document.getElementById('charImage').style.display='none'; document.getElementById('imgInput').value=""; document.getElementById('deleteImageBtn').style.display='none'; });
-
-// Helpers
-function createSkillGrid(){const b=document.getElementById('skillGridBody'),h=document.querySelector('#skillGrid thead tr');b.innerHTML='';h.querySelectorAll('.spacer-col-header').forEach(th=>{const i=parseInt(th.dataset.gap);th.classList.toggle('gap-closed',gapStates[i]);th.onclick=()=>toggleGap(i)});for(let i=0;i<11;i++){const r=document.createElement('tr');for(let j=0;j<6;j++){const d=document.createElement('td'),s=SKILL_GRID_DATA[i][j];d.textContent=s;d.dataset.skill=s;d.dataset.y=i;d.dataset.x=j;if(acquiredSkills.has(s))d.classList.add('selected');d.onclick=(e)=>handleSkillClick(e.target);r.appendChild(d);if(j<5){const sp=document.createElement('td');sp.className='spacer-col';if(gapStates[j])sp.classList.add('gap-closed');r.appendChild(sp)}}b.appendChild(r)}}
-function toggleGap(i){if(currentMode!=='edit')return;gapStates[i]=!gapStates[i];createSkillGrid()}
-
-function handleSkillClick(c){
-    const s=c.dataset.skill;
-    // 閲覧モードでも判定を行うように条件変更
-    if(document.querySelector('input[name="mode"]:checked').value==='setting' && currentMode === 'edit'){
-        if(acquiredSkills.has(s)){acquiredSkills.delete(s);c.classList.remove('selected');removeSkillFromList(s)}
-        else{acquiredSkills.add(s);c.classList.add('selected');addSkillToList(s)}
-    } else {
-        // 判定ロジック (閲覧時もここを通る)
-        performJudgment(parseInt(c.dataset.x),parseInt(c.dataset.y),s);
-    }
-}
-
-function addSkillToList(s){const l=document.getElementById('acquiredSkillsList');if(document.getElementById('row-'+s))return;const t=document.createElement('tr');t.id='row-'+s;t.innerHTML=`<td style="display:flex; justify-content:space-between;"><span>${s}</span><span class="judgment-result"></span></td>`;l.appendChild(t)}
-function removeSkillFromList(s){const r=document.getElementById('row-'+s);if(r)r.remove()}
-
-// 修正された判定ロジック: 全習得特技に対して計算し、最小値のみ赤色表示
-function performJudgment(targetX, targetY, targetName) {
-    document.querySelectorAll('.judging').forEach(e=>e.classList.remove('judging'));
-    document.querySelectorAll('.judgment-result').forEach(e=> { e.textContent=''; e.style.color=''; e.style.fontWeight=''; });
-
-    const targetCell = document.querySelector(`td[data-skill="${targetName}"]`);
-    if(targetCell) targetCell.classList.add('judging');
-
-    if (acquiredSkills.size === 0) return;
-
-    let minCost = Infinity;
-    const results = [];
-
-    acquiredSkills.forEach(sourceName => {
-        const sourceCell = document.querySelector(`td[data-skill="${sourceName}"]`);
-        if (!sourceCell) return;
-        
-        const sx = parseInt(sourceCell.dataset.x);
-        const sy = parseInt(sourceCell.dataset.y);
-        
-        const distY = Math.abs(targetY - sy);
-        let distX = 0;
-        const startX = Math.min(targetX, sx);
-        const endX = Math.max(targetX, sx);
-        
-        for (let k = startX; k < endX; k++) {
-            distX += 1; 
-            if (!gapStates[k]) distX += 1; 
-        }
-        
-        const totalCost = distY + distX;
-        if (totalCost < minCost) minCost = totalCost;
-        
-        results.push({ name: sourceName, cost: totalCost });
-    });
-
-    results.forEach(res => {
-        const row = document.querySelector(`#row-${res.name} .judgment-result`);
-        if (row) {
-            const targetVal = 5 + res.cost;
-            
-            // 表示テキストの組み立て（修正点）
-            let text = `2D6>=${targetVal}`;
-            if (res.name === targetName) {
-                text += ` （判定：${targetName}）`;
-            } else {
-                text += ` （代用判定：${res.name}）`;
+                await window.app_saveCharacter(null, copyData);
+                showToast("キャラクターをコピーしました");
+                loadCharacterList(); // 一覧を再読み込み
+            } catch (e) {
+                showToast("コピーに失敗しました");
+                console.error(e);
             }
-            
-            row.textContent = text;
-            
-            // 最小値のみ赤色強調
-            if (res.cost === minCost) {
-                row.style.color = '#ff4444'; 
-                row.style.fontWeight = 'bold';
+        };
+        document.getElementById('deleteConfirmBtn').addEventListener('click', async () => {
+            if (deleteTargetId) { try { await window.app_deleteCharacter(deleteTargetId); showToast("削除しました"); document.getElementById('deleteModal').style.display = 'none'; loadCharacterList(); } catch (e) { showToast("削除失敗"); } }
+        });
+        document.getElementById('deleteCancelBtn').addEventListener('click', () => document.getElementById('deleteModal').style.display = 'none');
+        document.getElementById('deleteImageBtn').addEventListener('click', () => { document.getElementById('charImage').src = ""; document.getElementById('charImage').style.display = 'none'; document.getElementById('imgInput').value = ""; document.getElementById('deleteImageBtn').style.display = 'none'; });
+
+        // Palette Logic
+        window.openPalette = async (charId) => {
+            try {
+                const data = await window.app_getCharacter(charId);
+                if (!data) return showToast("データが見つかりません");
+
+                document.getElementById('paletteCharName').textContent = data.name || '名称未設定';
+                const text = generatePaletteText(data);
+                document.getElementById('paletteText').value = text;
+                document.getElementById('paletteModal').style.display = 'flex';
+            } catch (e) {
+                console.error(e);
+                showToast("生成エラー");
+            }
+        };
+
+        function generatePaletteText(data) {
+            let text = `キャラクター名: ${data.name || ''}\n\n`;
+            text += `＠忍法\n＠判定\n\n`;
+
+            // --- Ninpo ---
+            text += `───忍法───\n`;
+            const ninpo = data.ninpo || [];
+            ninpo.forEach((n, idx) => {
+                const charCode = String.fromCharCode(97 + idx); // a, b, c...
+                text += `【${n.name || ''}】　${n.type || ''}　特技:《${n.designated_skill || 'なし'}》　間合:${n.gap || ''}　コスト:${n.cost || ''}　効果:${n.effect || ''}　ページ:${n.page || ''}　＠忍法 @n @${charCode}\n`;
+                if (n.designated_skill && n.designated_skill !== 'なし') {
+                    // Check if designated skill is acquired
+                    const skillName = n.designated_skill;
+                    const acquired = data.skills ? data.skills.includes(skillName) : false;
+                    let tn = 5;
+                    // Note: Calculating correct TN for ninpo requires full skill logic. 
+                    // Reuse calculateSkillTN logic if possible, or simplified check.
+                    // For now, let's use the robust calculation.
+                    const skillRes = calculateSkillTN(skillName, new Set(data.skills || []), data.gapStates || [false, false, false, false, false]);
+                    if (skillRes) {
+                        if (skillRes.source === skillName) {
+                            text += `SG@12#2+0>=${skillRes.tn} (判定：＠${skillName})：${n.name} ＠判定 @h @${charCode}\n\n`;
+                        } else {
+                            text += `SG@12#2+0>=${skillRes.tn} (代用判定：${skillRes.source}、指定特技：＠${skillName})：${n.name} ＠判定 @h @${charCode}\n\n`;
+                        }
+                    } else {
+                        // Default fallback if skill not found in grid (e.g. custom name)
+                        text += `SG@12#2+0>=5 (判定：＠${skillName})：${n.name} ＠判定 @h @${charCode}\n\n`;
+                    }
+                } else {
+                    text += `\n`;
+                }
+            });
+
+            // --- Skills by Category ---
+            const SKILL_GRID_DATA = [['絡繰術', '騎乗術', '生存術', '医術', '兵糧術', '異形化'], ['火術', '砲術', '潜伏術', '毒術', '鳥獣術', '召喚術'], ['水術', '手裏剣術', '遁走術', '罠術', '野戦術', '死霊術'], ['針術', '手練', '隠蔽術', '調査術', '地の利', '結界術'], ['仕込み', '身体操術', '隠形術', '詐術', '意気', '封術'], ['衣装術', '歩法', '隠密術', '対人術', '用兵術', '言霊術'], ['縄術', '走法', '変装術', '遊芸', '記憶術', '幻術'], ['登術', '飛術', '香術', '九ノ一の術', '見敵術', '瞳術'], ['拷問術', '骨法術', '分身の術', '傀儡の術', '暗号術', '千里眼の術'], ['鍵術', '刀術', '隠語術', '流言の術', '伝達術', '憑依術'], ['掘削術', '怪力', '第六感', '経済力', '人脈', '呪術']];
+            const categories = ['器術', '体術', '忍術', '謀術', '戦術', '妖術'];
+
+            const acquiredSet = new Set(data.skills || []);
+            const gaps = data.gapStates || [false, false, false, false, false];
+
+            categories.forEach((cat, colIdx) => {
+                text += `【${cat}分野】───\n`;
+                // Iterate through all 11 rows for this column
+                for (let row = 0; row < 11; row++) {
+                    const skillName = SKILL_GRID_DATA[row][colIdx];
+                    const res = calculateSkillTN(skillName, acquiredSet, gaps);
+                    if (res) {
+                        if (res.source === skillName) {
+                            text += `SG@12#2+0>=${res.tn} (判定：＠${skillName})\n`;
+                        } else {
+                            // SG@12#2+0>=[TN] (代用判定：[Source], 指定特技：＠[Target])
+                            text += `SG@12#2+0>=${res.tn} (代用判定：${res.source}、指定特技：＠${skillName})\n`;
+                        }
+                    }
+                }
+                text += `\n`;
+            });
+
+            // --- Curse / Paralysis ---
+            text += `───呪い・マヒ───\n`;
+            // Simplified: list all acquired skills for now, split by ninpo/skill if possible but data structure mixes them not easily?
+            // Actually ninpo names are in data.ninpo
+            const ninpoNames = (data.ninpo || []).map(n => n.name).filter(n => n);
+            if (ninpoNames.length) {
+                text += `choice[${ninpoNames.join(',')}] ＠呪い忍法ランダム選択\n\n`;
+            }
+            // All acquired skills for paralysis
+            if (data.skills && data.skills.length) {
+                text += `choice[${data.skills.join(',')}] ＠マヒ特技ランダム選択\n`;
+            }
+
+            // --- Fixed Footer ---
+            text += `
+2D6
+D66
+ノ
+ヘ
+choice[a,b,c]
+感情修正　[対象] → [感情]+
+感情修正　[対象] → [感情]-
+
+─── 手番開始 ───
+
+─── 手番終了 ───
+
+───ランダム特技決定表───
+RTT　【ランダム特技】
+RTT1　【ランダム特技(1/器術)】
+RTT2　【ランダム特技(2/体術)】
+RTT3　【ランダム特技(3/忍術)】
+RTT4　【ランダム特技(4/謀術)】
+RTT5　【ランダム特技(5/戦術)】
+RTT6　【ランダム特技(6/妖術)】
+RCT　【ランダム分野表】
+
+───ダメージ算出───
+x1 RCT　【接近戦ダメージ1点】
+x2 RCT　【接近戦ダメージ2点】
+x3 RCT　【接近戦ダメージ3点】
+x4 RCT　【接近戦ダメージ4点】
+x1 WT　【集団戦ダメージ1点(通常)】
+x2 WT　【集団戦ダメージ2点(通常)】
+x3 WT　【集団戦ダメージ3点(通常)】
+x1 GWT　【集団戦ダメージ1点(戦国)】
+x2 GWT　【集団戦ダメージ2点(戦国)】
+x3 GWT　【集団戦ダメージ3点(戦国)】
+
+───各種表───
+ET　【感情表】
+ST　【シーン表】
+FT　【ファンブル表】
+WT　【変調表】
+GWT　【戦国変調表】
+BT　【戦場表】
+BNT　【新戦場表】
+MT　【妖魔化(異形表、妖魔忍法表一括)】
+NMT　【妖魔化(新異形表利用)】
+YWT　【妖術変調対応表(現代／戦国)】
+OTS　【数奇】
+`;
+            return text;
+        }
+
+        // Helper: Calculate Target Number logic reuse
+        function calculateSkillTN(targetName, acquiredSet, gapStates) {
+            // Find target coords
+            let tx = -1, ty = -1;
+            const SKILL_GRID_DATA = [['絡繰術', '騎乗術', '生存術', '医術', '兵糧術', '異形化'], ['火術', '砲術', '潜伏術', '毒術', '鳥獣術', '召喚術'], ['水術', '手裏剣術', '遁走術', '罠術', '野戦術', '死霊術'], ['針術', '手練', '隠蔽術', '調査術', '地の利', '結界術'], ['仕込み', '身体操術', '隠形術', '詐術', '意気', '封術'], ['衣装術', '歩法', '隠密術', '対人術', '用兵術', '言霊術'], ['縄術', '走法', '変装術', '遊芸', '記憶術', '幻術'], ['登術', '飛術', '香術', '九ノ一の術', '見敵術', '瞳術'], ['拷問術', '骨法術', '分身の術', '傀儡の術', '暗号術', '千里眼の術'], ['鍵術', '刀術', '隠語術', '流言の術', '伝達術', '憑依術'], ['掘削術', '怪力', '第六感', '経済力', '人脈', '呪術']];
+            for (let y = 0; y < 11; y++) {
+                for (let x = 0; x < 6; x++) {
+                    if (SKILL_GRID_DATA[y][x] === targetName) { tx = x; ty = y; break; }
+                }
+                if (tx !== -1) break;
+            }
+            if (tx === -1) return null; // Skill not found
+
+            if (acquiredSet.has(targetName)) return { tn: 5, source: targetName };
+            if (acquiredSet.size === 0) return { tn: 12, source: 'なし' }; // No skills
+
+            let minCost = Infinity;
+            let bestSource = null;
+
+            acquiredSet.forEach(sourceName => {
+                let sx = -1, sy = -1;
+                for (let y = 0; y < 11; y++) {
+                    for (let x = 0; x < 6; x++) {
+                        if (SKILL_GRID_DATA[y][x] === sourceName) { sx = x; sy = y; break; }
+                    }
+                    if (sx !== -1) break;
+                }
+                if (sx === -1) return;
+
+                const distY = Math.abs(ty - sy);
+                let distX = 0;
+                const startX = Math.min(tx, sx);
+                const endX = Math.min(Math.max(tx, sx), 5); // Ensure within bounds
+
+                // Count gaps
+                for (let k = startX; k < Math.max(tx, sx); k++) {
+                    distX += 1;
+                    if (!gapStates[k]) distX += 1;
+                }
+                const totalCost = distY + distX;
+                if (totalCost < minCost) {
+                    minCost = totalCost;
+                    bestSource = sourceName;
+                }
+            });
+
+            return { tn: 5 + minCost, source: bestSource };
+        }
+
+        // Modal Event Listeners
+        document.getElementById('paletteCopyBtn').addEventListener('click', async () => {
+            const text = document.getElementById('paletteText').value;
+            await navigator.clipboard.writeText(text);
+            showToast("クリップボードにコピーしました");
+        });
+        document.getElementById('paletteDlBtn').addEventListener('click', () => {
+            const text = document.getElementById('paletteText').value;
+            const blob = new Blob([text], { type: 'text/plain' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = (document.getElementById('paletteCharName').textContent || 'character') + '.txt';
+            a.click();
+            URL.revokeObjectURL(url);
+        });
+        document.getElementById('paletteKomaBtn').addEventListener('click', () => {
+            showToast("設定のみ (未実装)");
+        });
+
+        // Helpers
+        function createSkillGrid() { const b = document.getElementById('skillGridBody'), h = document.querySelector('#skillGrid thead tr'); b.innerHTML = ''; h.querySelectorAll('.spacer-col-header').forEach(th => { const i = parseInt(th.dataset.gap); th.classList.toggle('gap-closed', gapStates[i]); th.onclick = () => toggleGap(i) }); for (let i = 0; i < 11; i++) { const r = document.createElement('tr'); for (let j = 0; j < 6; j++) { const d = document.createElement('td'), s = SKILL_GRID_DATA[i][j]; d.textContent = s; d.dataset.skill = s; d.dataset.y = i; d.dataset.x = j; if (acquiredSkills.has(s)) d.classList.add('selected'); d.onclick = (e) => handleSkillClick(e.target); r.appendChild(d); if (j < 5) { const sp = document.createElement('td'); sp.className = 'spacer-col'; if (gapStates[j]) sp.classList.add('gap-closed'); r.appendChild(sp) } } b.appendChild(r) } }
+        function toggleGap(i) { if (currentMode !== 'edit') return; gapStates[i] = !gapStates[i]; createSkillGrid() }
+
+        function handleSkillClick(c) {
+            const s = c.dataset.skill;
+            // 閲覧モードでも判定を行うように条件変更
+            if (document.querySelector('input[name="mode"]:checked').value === 'setting' && currentMode === 'edit') {
+                if (acquiredSkills.has(s)) { acquiredSkills.delete(s); c.classList.remove('selected'); removeSkillFromList(s) }
+                else { acquiredSkills.add(s); c.classList.add('selected'); addSkillToList(s) }
             } else {
-                row.style.color = '#888';
-                row.style.fontWeight = 'normal';
+                // 判定ロジック (閲覧時もここを通る)
+                performJudgment(parseInt(c.dataset.x), parseInt(c.dataset.y), s);
             }
         }
-    });
-}
 
-function renderDynamicTable(t,d){const c=document.getElementById(t+'Container');let h=`<div class="dynamic-table-container"><table><tbody id="tbody-${t}">`;d.forEach((r,i)=>h+=createRowHTML(t,r,i));h+=`</tbody></table></div>`;c.innerHTML=h}
-function createRowHTML(t,r={},i){const s=DYNAMIC_SCHEMAS[t];let h=`<tr class="dynamic-row" data-idx="${i}">`;s.forEach(f=>{const v=r[f.key]||'';h+=`<td width="${f.width}">`;if(f.key==='effect'){h+=`<textarea class="dyn-input" data-key="${f.key}" placeholder="${f.placeholder}" rows="2">${v}</textarea>`}else if(f.type==='checkbox'){const k=r[f.key]==='true'?'checked':'';h+=`<label style="font-size:0.8rem; cursor:pointer;"><input type="checkbox" class="dyn-input" data-key="${f.key}" ${k}><br>${f.placeholder}</label>`}else if(f.options){let o=f.options;if(f.key==='emotion'){const ct=r['emotion_type']||'+';o=EMOTIONS[ct]}const oc=f.onchange?`onchange="${f.onchange}"`:'';h+=`<select class="dyn-input" data-key="${f.key}" ${oc}>`;o.forEach(op=>{const sl=v===op?'selected':'';h+=`<option value="${op}" ${sl}>${op}</option>`});h+=`</select>`}else{h+=`<input type="text" class="dyn-input" data-key="${f.key}" value="${v}" placeholder="${f.placeholder}">`}h+=`</td>`});h+=`<td width="5%" class="edit-only"><button type="button" class="btn-sm btn-danger" onclick="this.closest('tr').remove()">×</button></td></tr>`;return h}
-window.addDynamicRow=t=>{const b=document.getElementById(`tbody-${t}`);b.insertAdjacentHTML('beforeend',createRowHTML(t,{},b.children.length))};
-window.updateEmotionOptions=s=>{const r=s.closest('tr'),t=s.value,e=r.querySelector('.dyn-input[data-key="emotion"]');if(e){let h='';EMOTIONS[t].forEach(o=>h+=`<option value="${o}">${o}</option>`);e.innerHTML=h}};
-function getDynamicData(t){const b=document.getElementById(`tbody-${t}`),R=[];b.querySelectorAll('tr').forEach(r=>{const d={};r.querySelectorAll('.dyn-input').forEach(i=>{if(i.type==='checkbox')d[i.dataset.key]=i.checked?'true':'false';else d[i.dataset.key]=i.value});R.push(d)});return R}
-const dz=document.getElementById('dropZone'),ii=document.getElementById('imgInput');dz.addEventListener('click',()=>ii.click());dz.addEventListener('dragover',e=>{e.preventDefault();dz.classList.add('dragover')});dz.addEventListener('dragleave',()=>dz.classList.remove('dragover'));dz.addEventListener('drop',e=>{e.preventDefault();dz.classList.remove('dragover');if(e.dataTransfer.files.length){ii.files=e.dataTransfer.files;handleImage(e.dataTransfer.files[0])}});ii.addEventListener('change',e=>{if(e.target.files[0])handleImage(e.target.files[0])});
-function handleImage(f){const r=new FileReader();r.onload=ev=>{const i=new Image();i.onload=()=>{const c=document.createElement('canvas'),M=300;let w=i.width,h=i.height;if(w>h){if(w>M){h*=M/w;w=M}}else{if(h>M){w*=M/h;h=M}}c.width=w;c.height=h;c.getContext('2d').drawImage(i,0,0,w,h);document.getElementById('charImage').src=c.toDataURL('image/png');document.getElementById('charImage').style.display='block';document.getElementById('deleteImageBtn').style.display='block'};i.src=ev.target.result};r.readAsDataURL(f)}
-function showToast(m){const t=document.getElementById('toastNotification');t.textContent=m;t.classList.add('show');setTimeout(()=>t.classList.remove('show'),3000)}
-</script>
+        function addSkillToList(s) { const l = document.getElementById('acquiredSkillsList'); if (document.getElementById('row-' + s)) return; const t = document.createElement('tr'); t.id = 'row-' + s; t.innerHTML = `<td style="display:flex; justify-content:space-between;"><span>${s}</span><span class="judgment-result"></span></td>`; l.appendChild(t) }
+        function removeSkillFromList(s) { const r = document.getElementById('row-' + s); if (r) r.remove() }
+
+        // 修正された判定ロジック: 全習得特技に対して計算し、最小値のみ赤色表示
+        function performJudgment(targetX, targetY, targetName) {
+            document.querySelectorAll('.judging').forEach(e => e.classList.remove('judging'));
+            document.querySelectorAll('.judgment-result').forEach(e => { e.textContent = ''; e.style.color = ''; e.style.fontWeight = ''; });
+
+            const targetCell = document.querySelector(`td[data-skill="${targetName}"]`);
+            if (targetCell) targetCell.classList.add('judging');
+
+            if (acquiredSkills.size === 0) return;
+
+            let minCost = Infinity;
+            const results = [];
+
+            acquiredSkills.forEach(sourceName => {
+                const sourceCell = document.querySelector(`td[data-skill="${sourceName}"]`);
+                if (!sourceCell) return;
+
+                const sx = parseInt(sourceCell.dataset.x);
+                const sy = parseInt(sourceCell.dataset.y);
+
+                const distY = Math.abs(targetY - sy);
+                let distX = 0;
+                const startX = Math.min(targetX, sx);
+                const endX = Math.max(targetX, sx);
+
+                for (let k = startX; k < endX; k++) {
+                    distX += 1;
+                    if (!gapStates[k]) distX += 1;
+                }
+
+                const totalCost = distY + distX;
+                if (totalCost < minCost) minCost = totalCost;
+
+                results.push({ name: sourceName, cost: totalCost });
+            });
+
+            results.forEach(res => {
+                const row = document.querySelector(`#row-${res.name} .judgment-result`);
+                if (row) {
+                    const targetVal = 5 + res.cost;
+
+                    // 表示テキストの組み立て（修正点）
+                    let text = `2D6>=${targetVal}`;
+                    if (res.name === targetName) {
+                        text += ` （判定：${targetName}）`;
+                    } else {
+                        text += ` （${targetName} 代用判定：${res.name}）`;
+                    }
+
+                    row.textContent = text;
+
+                    // 最小値のみ赤色強調
+                    if (res.cost === minCost) {
+                        row.style.color = '#ff4444';
+                        row.style.fontWeight = 'bold';
+                    } else {
+                        row.style.color = '#888';
+                        row.style.fontWeight = 'normal';
+                    }
+                }
+            });
+        }
+
+        function renderDynamicTable(t, d) { const c = document.getElementById(t + 'Container'); let h = `<div class="dynamic-table-container"><table><tbody id="tbody-${t}">`; d.forEach((r, i) => h += createRowHTML(t, r, i)); h += `</tbody></table></div>`; c.innerHTML = h }
+        function createRowHTML(t, r = {}, i) { const s = DYNAMIC_SCHEMAS[t]; let h = `<tr class="dynamic-row" data-idx="${i}">`; s.forEach(f => { const v = r[f.key] || ''; h += `<td width="${f.width}">`; if (f.key === 'effect') { h += `<textarea class="dyn-input" data-key="${f.key}" placeholder="${f.placeholder}" rows="2">${v}</textarea>` } else if (f.type === 'checkbox') { const k = r[f.key] === 'true' ? 'checked' : ''; h += `<label style="font-size:0.8rem; cursor:pointer;"><input type="checkbox" class="dyn-input" data-key="${f.key}" ${k}><br>${f.placeholder}</label>` } else if (f.options) { let o = f.options; if (f.key === 'emotion') { const ct = r['emotion_type'] || '+'; o = EMOTIONS[ct] } const oc = f.onchange ? `onchange="${f.onchange}"` : ''; h += `<select class="dyn-input" data-key="${f.key}" ${oc}>`; o.forEach(op => { const sl = v === op ? 'selected' : ''; h += `<option value="${op}" ${sl}>${op}</option>` }); h += `</select>` } else { h += `<input type="text" class="dyn-input" data-key="${f.key}" value="${v}" placeholder="${f.placeholder}">` } h += `</td>` }); h += `<td width="5%" class="edit-only"><button type="button" class="btn-sm btn-danger" onclick="this.closest('tr').remove()">×</button></td></tr>`; return h }
+        window.addDynamicRow = t => { const b = document.getElementById(`tbody-${t}`); b.insertAdjacentHTML('beforeend', createRowHTML(t, {}, b.children.length)) };
+        window.updateEmotionOptions = s => { const r = s.closest('tr'), t = s.value, e = r.querySelector('.dyn-input[data-key="emotion"]'); if (e) { let h = ''; EMOTIONS[t].forEach(o => h += `<option value="${o}">${o}</option>`); e.innerHTML = h } };
+        function getDynamicData(t) { const b = document.getElementById(`tbody-${t}`), R = []; b.querySelectorAll('tr').forEach(r => { const d = {}; r.querySelectorAll('.dyn-input').forEach(i => { if (i.type === 'checkbox') d[i.dataset.key] = i.checked ? 'true' : 'false'; else d[i.dataset.key] = i.value }); R.push(d) }); return R }
+        const dz = document.getElementById('dropZone'), ii = document.getElementById('imgInput'); dz.addEventListener('click', () => ii.click()); dz.addEventListener('dragover', e => { e.preventDefault(); dz.classList.add('dragover') }); dz.addEventListener('dragleave', () => dz.classList.remove('dragover')); dz.addEventListener('drop', e => { e.preventDefault(); dz.classList.remove('dragover'); if (e.dataTransfer.files.length) { ii.files = e.dataTransfer.files; handleImage(e.dataTransfer.files[0]) } }); ii.addEventListener('change', e => { if (e.target.files[0]) handleImage(e.target.files[0]) });
+        function handleImage(f) { const r = new FileReader(); r.onload = ev => { const i = new Image(); i.onload = () => { const c = document.createElement('canvas'), M = 300; let w = i.width, h = i.height; if (w > h) { if (w > M) { h *= M / w; w = M } } else { if (h > M) { w *= M / h; h = M } } c.width = w; c.height = h; c.getContext('2d').drawImage(i, 0, 0, w, h); document.getElementById('charImage').src = c.toDataURL('image/png'); document.getElementById('charImage').style.display = 'block'; document.getElementById('deleteImageBtn').style.display = 'block' }; i.src = ev.target.result }; r.readAsDataURL(f) }
+        function showToast(m) { const t = document.getElementById('toastNotification'); t.textContent = m; t.classList.add('show'); setTimeout(() => t.classList.remove('show'), 3000) }
+    </script>
 </body>
+
 </html>
