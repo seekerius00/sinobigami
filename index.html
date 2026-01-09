@@ -1097,7 +1097,7 @@
                 <div class="card">
                     <h2>忍法</h2>
                     <div id="ninpoContainer"></div>
-                    <button type="button" class="btn-item-add edit-only" onclick="addDynamicRow('ninpo')">+
+                    <button type="button" class="btn-ninpo-add edit-only" onclick="addDynamicRow('ninpo')">+
                         忍法追加</button>
                 </div>
 
@@ -1977,6 +1977,7 @@ OTS　【数奇】
                <button type="button" class="item-delete edit-only" onclick="this.closest('.item-card').remove()">×</button>
                <div class="card-body">
                    <div class="card-row">
+                       <span class="card-label">奥義名:</span>
                        <input type="text" class="dyn-input card-input" data-key="name" value="${v('name')}" placeholder="奥義名" style="font-weight:bold; width:100%;">
                    </div>
                    <div class="card-row">
