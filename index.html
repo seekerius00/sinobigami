@@ -960,7 +960,11 @@
             <div class="search-bar">
                 <input type="text" id="searchInput" placeholder="キャラクター名で検索...">
             </div>
-            <div style="text-align: right; margin-bottom: 1rem;">
+            <div
+                style="text-align: right; margin-bottom: 1rem; display: flex; justify-content: flex-end; align-items: center; gap: 15px;">
+                <label style="font-size: 0.9rem; cursor: pointer; user-select: none;">
+                    <input type="checkbox" id="copyConfirmSetting"> コピー時に確認
+                </label>
                 <button id="createNewBtn">新規作成</button>
             </div>
             <div id="charListContainer" class="char-list"></div>
@@ -1165,6 +1169,18 @@
             <div class="modal-buttons">
                 <button id="deleteConfirmBtn" class="btn-danger">はい、削除します</button>
                 <button id="deleteCancelBtn" class="secondary">いいえ</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Copy Confirm Modal -->
+    <div id="copyConfirmModal" class="modal-overlay">
+        <div class="modal">
+            <h3>確認</h3>
+            <p>このキャラクターのコピーを作成しますか？</p>
+            <div class="modal-buttons">
+                <button id="copyConfirmBtn" class="btn-success">はい、作成します</button>
+                <button id="copyCancelBtn" class="secondary">キャンセル</button>
             </div>
         </div>
     </div>
@@ -1503,7 +1519,44 @@
         window.confirmDelete = (id) => { deleteTargetId = id; document.getElementById('deleteModal').style.display = 'flex'; };
 
         // コピー機能
+        // コピー機能
+        let copyTargetId = null;
+
+        // 設定読み込み
+        const savedCopySetting = localStorage.getItem('copyConfirm');
+        const copyConfirmCheckbox = document.getElementById('copyConfirmSetting');
+        // デフォルトはON (true)
+        copyConfirmCheckbox.checked = savedCopySetting !== 'false';
+
+        copyConfirmCheckbox.addEventListener('change', (e) => {
+            localStorage.setItem('copyConfirm', e.target.checked);
+        });
+
         window.copyCharacter = async (charId) => {
+            const shouldConfirm = copyConfirmCheckbox.checked;
+
+            if (shouldConfirm) {
+                copyTargetId = charId;
+                document.getElementById('copyConfirmModal').style.display = 'flex';
+            } else {
+                await executeCopy(charId);
+            }
+        };
+
+        document.getElementById('copyConfirmBtn').addEventListener('click', async () => {
+            if (copyTargetId) {
+                document.getElementById('copyConfirmModal').style.display = 'none';
+                await executeCopy(copyTargetId);
+                copyTargetId = null;
+            }
+        });
+
+        document.getElementById('copyCancelBtn').addEventListener('click', () => {
+            document.getElementById('copyConfirmModal').style.display = 'none';
+            copyTargetId = null;
+        });
+
+        async function executeCopy(charId) {
             try {
                 const data = await window.app_getCharacter(charId);
                 if (!data) {
@@ -1522,7 +1575,8 @@
                 showToast("コピーに失敗しました");
                 console.error(e);
             }
-        };
+        }
+
         document.getElementById('deleteConfirmBtn').addEventListener('click', async () => {
             if (deleteTargetId) { try { await window.app_deleteCharacter(deleteTargetId); showToast("削除しました"); document.getElementById('deleteModal').style.display = 'none'; loadCharacterList(); } catch (e) { showToast("削除失敗"); } }
         });
