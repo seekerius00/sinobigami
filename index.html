@@ -3,7 +3,7 @@
 
 <head>
 
-    <!--
+    <!--dawdadadasdadadwada
     修正版v5:
     1. ログイン画面の切替リンクを右寄せのボタンに変更
     2. 判定値の表示形式を「2D6>=X （代用判定：YY）」等に変更daf
@@ -2027,7 +2027,7 @@ OTS　【数奇】
         function createOugiCardHTML(r = {}, i) {
             const v = (k) => r[k] || '';
             return `
-                < div class="item-card dynamic-row" data - idx="${i}" >
+            <div class="item-card dynamic-row" data-idx="${i}">
                <button type="button" class="item-delete edit-only" onclick="this.closest('.item-card').remove()">×</button>
                <div class="card-body">
                    <div class="card-row">
@@ -2047,13 +2047,23 @@ OTS　【数奇】
                         <textarea class="dyn-input card-textarea" data-key="effect" placeholder="演出">${v('effect')}</textarea>
                    </div>
                </div>
-            </div > `;
+            </div>`;
         }
 
         function createRowHTML(t, r = {}, i) { const s = DYNAMIC_SCHEMAS[t]; let h = `< tr class="dynamic-row" data - idx="${i}" > `; s.forEach(f => { const v = r[f.key] || ''; h += ` < td width = "${f.width}" > `; if (f.key === 'effect') { h += ` < textarea class="dyn-input" data - key="${f.key}" placeholder = "${f.placeholder}" rows = "2" > ${v}</textarea > ` } else if (f.type === 'checkbox') { const k = r[f.key] === 'true' ? 'checked' : ''; h += ` < label style = "font-size:0.8rem; cursor:pointer;" > <input type="checkbox" class="dyn-input" data-key="${f.key}" ${k}><br>${f.placeholder}</label>` } else if (f.options) { let o = f.options; if (f.key === 'emotion') { const ct = r['emotion_type'] || '+'; o = EMOTIONS[ct] } const oc = f.onchange ? `onchange="${f.onchange}"` : ''; h += `<select class="dyn-input" data-key="${f.key}" ${oc}>`; o.forEach(op => { const sl = v === op ? 'selected' : ''; h += `<option value="${op}" ${sl}>${op}</option>` }); h += `</select>` } else { h += `<input type="text" class="dyn-input" data-key="${f.key}" value="${v}" placeholder="${f.placeholder}">` } h += `</td>` }); h += ` < td width = "5%" class="edit-only" > <button type="button" class="btn-sm btn-danger" onclick="this.closest('.dynamic-row').remove()">×</button></td ></tr > `; return h }
 
         window.addDynamicRow = t => {
-            const b = document.getElementById(`tbody - ${t} `);
+            let b = document.getElementById(`tbody-${t}`);
+            // If the container doesn't exist, initialize it
+            if (!b) {
+                const container = document.getElementById(`${t}Container`);
+                if (container) {
+                    container.innerHTML = `<div class="card-grid" id="tbody-${t}"></div>`;
+                    b = document.getElementById(`tbody-${t}`);
+                }
+            }
+            if (!b) return; // Safety check
+
             if (['ninpo', 'background', 'person', 'tool', 'ougi'].includes(t)) {
                 let html = '';
                 const len = b.children.length;
@@ -2078,7 +2088,7 @@ OTS　【数奇】
         window.updateEmotionOptions = s => { const r = s.closest('.dynamic-row'), t = s.value, e = r.querySelector('.dyn-input[data-key="emotion"]'); if (e) { let h = ''; EMOTIONS[t].forEach(o => h += `< option value = "${o}" > ${o}</option > `); e.innerHTML = h } };
 
         function getDynamicData(t) {
-            const b = document.getElementById(`tbody - ${t}`);
+            const b = document.getElementById(`tbody-${t}`);
             const R = [];
             // Use .dynamic-row class to match both tr and div.ninpo-card
             const rows = b.getElementsByClassName('dynamic-row');
