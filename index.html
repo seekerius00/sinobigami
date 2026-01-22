@@ -880,10 +880,38 @@
             text-align: center;
         }
 
+        /* A-E列の幅を半分に縮小 */
+        /* A-E列の幅を半分に縮小 */
+        #skillGrid th.spacer-col-header,
+        #skillGridBody td.spacer-col {
+            width: 2px;
+            min-width: 2px;
+            max-width: 2px;
+            padding: 0;
+            font-size: 0.65rem;
+        }
+
+        /* スキルコントロール */
+        .skill-controls {
+            display: flex;
+            flex-wrap: wrap;
+            align-items: center;
+            gap: 0.5rem;
+            margin-bottom: 1rem;
+        }
+
+        .skill-controls label {
+            display: flex;
+            align-items: center;
+            gap: 0.3rem;
+            font-size: 0.9rem;
+        }
+
         /* スペシャル/ファンブル/修正値 UI */
         .judgment-params {
             display: flex;
-            gap: 1.5rem;
+            flex-wrap: wrap;
+            gap: 0.8rem;
             margin-bottom: 1rem;
             padding: 0.8rem 1rem;
             background: #2a2f35;
@@ -893,32 +921,38 @@
 
         .judgment-params .param-group {
             display: flex;
+            flex-direction: column;
             align-items: center;
-            gap: 0.5rem;
+            gap: 0.3rem;
+            flex: 1;
+            min-width: 65px;
         }
 
         .judgment-params label {
-            font-size: 0.85rem;
+            font-size: 0.7rem;
             color: #adb5bd;
             font-weight: 500;
+            text-align: center;
+            line-height: 1.2;
         }
 
         .judgment-params input[type="number"] {
-            width: 55px;
-            padding: 0.3rem 0.4rem;
+            width: 50px;
+            padding: 0.4rem;
             border-radius: 4px;
             border: 1px solid #6c757d;
             background-color: #495057;
             color: #fff;
-            font-size: 0.9rem;
+            font-size: 1rem;
             text-align: center;
         }
 
         /* 判定特技表示 */
         .judgment-skill-display {
             display: flex;
+            flex-wrap: wrap;
             align-items: center;
-            gap: 0.8rem;
+            gap: 0.5rem;
             margin-bottom: 0.8rem;
             padding: 0.5rem 0;
         }
@@ -932,6 +966,7 @@
 
         .judgment-skill-display input[type="text"] {
             flex: 1;
+            min-width: 120px;
             max-width: 200px;
             padding: 0.4rem 0.6rem;
             border-radius: 4px;
@@ -942,12 +977,13 @@
         }
 
         .judgment-skill-display label {
-            font-size: 0.8rem;
+            font-size: 0.75rem;
             color: #adb5bd;
             cursor: pointer;
             display: flex;
             align-items: center;
             gap: 0.3rem;
+            white-space: nowrap;
         }
 
         /* 判定種別ラジオボタン */
@@ -1029,6 +1065,83 @@
                 justify-content: center;
                 width: 100%;
             }
+
+            /* スキルコントロールのモバイル対応 */
+            .skill-controls {
+                flex-direction: column;
+                align-items: flex-start;
+                gap: 0.5rem;
+            }
+
+            .skill-controls span[style*="float:right"] {
+                float: none !important;
+                font-size: 0.7rem;
+                margin-top: 0.3rem;
+            }
+
+            /* 判定パラメータのモバイル対応 */
+            .judgment-params {
+                padding: 0.6rem;
+                gap: 0.5rem;
+            }
+
+            .judgment-params .param-group {
+                min-width: 55px;
+            }
+
+            .judgment-params label {
+                font-size: 0.65rem;
+            }
+
+            .judgment-params input[type="number"] {
+                width: 45px;
+                padding: 0.3rem;
+            }
+
+            /* 判定特技表示のモバイル対応 */
+            .judgment-skill-display {
+                flex-direction: column;
+                align-items: flex-start;
+                gap: 0.4rem;
+            }
+
+            .judgment-skill-display input[type="text"] {
+                width: 100%;
+                max-width: none;
+            }
+
+            /* 判定種別ラジオボタンのモバイル対応 */
+            .judgment-type-radios {
+                gap: 0.2rem 0.5rem;
+            }
+
+            .judgment-type-radios label {
+                font-size: 0.75rem;
+                padding: 0.2rem 0.4rem;
+            }
+        }
+
+        /* 編集モード時のボタンエリア - 常に画面下部に固定 */
+        body.edit-mode .button-area {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            margin: 0;
+            padding: 1rem;
+            background: var(--card-bg);
+            border-top: 1px solid var(--border);
+            border-radius: 0;
+            z-index: 100;
+            display: flex;
+            gap: 1rem;
+            justify-content: center;
+            box-shadow: 0 -2px 10px rgba(0, 0, 0, 0.3);
+        }
+
+        /* ボタンエリア用のスペーサー */
+        body.edit-mode #page-form {
+            padding-bottom: 80px;
         }
     </style>
 </head>
