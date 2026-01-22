@@ -1,10 +1,9 @@
-
 <!DOCTYPE html>
 <html lang="ja">
 
 <head>
 
-    <!--
+    <!--dawdadadasdadadwada
     修正版v5:
     1. ログイン画面の切替リンクを右寄せのボタンに変更
     2. 判定値の表示形式を「2D6>=X （代用判定：YY）」等に変更daf
@@ -684,6 +683,122 @@
             z-index: 1000;
         }
 
+        /* Item Card UI (Generic) */
+        .card-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+            gap: 1rem;
+            margin-bottom: 1rem;
+        }
+
+        .item-card {
+            background-color: #343a40;
+            border-radius: 12px;
+            padding: 1rem;
+            position: relative;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.3);
+            border: 1px solid #495057;
+        }
+
+        .card-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 0.8rem;
+            border-bottom: 1px solid #6c757d;
+            padding-bottom: 0.5rem;
+        }
+
+        .card-title-input {
+            font-size: 1.2rem;
+            font-weight: bold;
+            background: transparent;
+            border: none;
+            color: #fff;
+            width: 100%;
+        }
+
+        .card-meta {
+            font-size: 0.85rem;
+            color: #ccc;
+            text-align: right;
+            white-space: nowrap;
+        }
+
+        .card-row {
+            margin-bottom: 0.5rem;
+            display: flex;
+            align-items: center;
+        }
+
+        .card-label {
+            width: 60px;
+            font-size: 0.85rem;
+            color: #adb5bd;
+            flex-shrink: 0;
+        }
+
+        .card-input,
+        .card-select,
+        .card-textarea {
+            background: transparent;
+            border: none;
+            border-bottom: 1px solid #6c757d;
+            color: #fff;
+            width: 100%;
+            padding: 2px 5px;
+            border-radius: 0;
+        }
+
+        .card-select {
+            background-color: #343a40;
+            /* Needed for dropdown options visibility */
+        }
+
+        .card-textarea {
+            resize: none;
+            height: 3.5em;
+            font-size: 0.9rem;
+        }
+
+        .item-delete {
+            position: absolute;
+            top: -12px;
+            right: -12px;
+            background: #dc3545;
+            color: white;
+            border: none;
+            width: 32px;
+            height: 32px;
+            border-radius: 4px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            font-size: 16px;
+            z-index: 10;
+        }
+
+        .btn-item-add {
+            width: 100%;
+            background-color: #c2185b;
+            /* Pinkish Red */
+            color: white;
+            padding: 0.8rem;
+            border-radius: 8px;
+            font-weight: bold;
+            border: none;
+            cursor: pointer;
+            text-align: left;
+            padding-left: 1.5rem;
+        }
+
+        .btn-item-add:hover {
+            background-color: #a0134a;
+        }
+
+
+
         .modal {
             background: var(--card-bg);
             padding: 2rem;
@@ -982,14 +1097,15 @@
                 <div class="card">
                     <h2>忍法</h2>
                     <div id="ninpoContainer"></div>
-                    <button type="button" class="btn-add edit-only" onclick="addDynamicRow('ninpo')">+ 忍法追加</button>
+                    <button type="button" class="btn-ninpo-add edit-only" onclick="addDynamicRow('ninpo')">+
+                        忍法追加</button>
                 </div>
 
                 <!-- Background -->
                 <div class="card">
                     <h2>背景</h2>
                     <div id="backgroundContainer"></div>
-                    <button type="button" class="btn-add edit-only" onclick="addDynamicRow('background')">+
+                    <button type="button" class="btn-item-add edit-only" onclick="addDynamicRow('background')">+
                         背景追加</button>
                 </div>
 
@@ -997,14 +1113,15 @@
                 <div class="card">
                     <h2>人物 (感情など)</h2>
                     <div id="personContainer"></div>
-                    <button type="button" class="btn-add edit-only" onclick="addDynamicRow('person')">+ 人物追加</button>
+                    <button type="button" class="btn-item-add edit-only" onclick="addDynamicRow('person')">+
+                        人物追加</button>
                 </div>
 
                 <!-- Tools -->
                 <div class="card">
                     <h2>忍具</h2>
                     <div id="toolContainer"></div>
-                    <button type="button" class="btn-add edit-only" onclick="addDynamicRow('tool')">+ 忍具追加</button>
+                    <button type="button" class="btn-item-add edit-only" onclick="addDynamicRow('tool')">+ 忍具追加</button>
                 </div>
 
                 <!-- Secrets -->
@@ -1013,7 +1130,8 @@
                     <div id="secretContent">
                         <h3>奥義</h3>
                         <div id="ougiContainer"></div>
-                        <button type="button" class="btn-add edit-only" onclick="addDynamicRow('ougi')">+ 奥義追加</button>
+                        <button type="button" class="btn-item-add edit-only" onclick="addDynamicRow('ougi')">+
+                            奥義追加</button>
                         <h3>秘密</h3>
                         <textarea name="secret" rows="5" placeholder="秘密情報を入力"></textarea>
                     </div>
@@ -1702,11 +1820,234 @@ OTS　【数奇】
             });
         }
 
-        function renderDynamicTable(t, d) { const c = document.getElementById(t + 'Container'); let h = `<div class="dynamic-table-container"><table><tbody id="tbody-${t}">`; d.forEach((r, i) => h += createRowHTML(t, r, i)); h += `</tbody></table></div>`; c.innerHTML = h }
-        function createRowHTML(t, r = {}, i) { const s = DYNAMIC_SCHEMAS[t]; let h = `<tr class="dynamic-row" data-idx="${i}">`; s.forEach(f => { const v = r[f.key] || ''; h += `<td width="${f.width}">`; if (f.key === 'effect') { h += `<textarea class="dyn-input" data-key="${f.key}" placeholder="${f.placeholder}" rows="2">${v}</textarea>` } else if (f.type === 'checkbox') { const k = r[f.key] === 'true' ? 'checked' : ''; h += `<label style="font-size:0.8rem; cursor:pointer;"><input type="checkbox" class="dyn-input" data-key="${f.key}" ${k}><br>${f.placeholder}</label>` } else if (f.options) { let o = f.options; if (f.key === 'emotion') { const ct = r['emotion_type'] || '+'; o = EMOTIONS[ct] } const oc = f.onchange ? `onchange="${f.onchange}"` : ''; h += `<select class="dyn-input" data-key="${f.key}" ${oc}>`; o.forEach(op => { const sl = v === op ? 'selected' : ''; h += `<option value="${op}" ${sl}>${op}</option>` }); h += `</select>` } else { h += `<input type="text" class="dyn-input" data-key="${f.key}" value="${v}" placeholder="${f.placeholder}">` } h += `</td>` }); h += `<td width="5%" class="edit-only"><button type="button" class="btn-sm btn-danger" onclick="this.closest('tr').remove()">×</button></td></tr>`; return h }
-        window.addDynamicRow = t => { const b = document.getElementById(`tbody-${t}`); b.insertAdjacentHTML('beforeend', createRowHTML(t, {}, b.children.length)) };
-        window.updateEmotionOptions = s => { const r = s.closest('tr'), t = s.value, e = r.querySelector('.dyn-input[data-key="emotion"]'); if (e) { let h = ''; EMOTIONS[t].forEach(o => h += `<option value="${o}">${o}</option>`); e.innerHTML = h } };
-        function getDynamicData(t) { const b = document.getElementById(`tbody-${t}`), R = []; b.querySelectorAll('tr').forEach(r => { const d = {}; r.querySelectorAll('.dyn-input').forEach(i => { if (i.type === 'checkbox') d[i.dataset.key] = i.checked ? 'true' : 'false'; else d[i.dataset.key] = i.value }); R.push(d) }); return R }
+        function renderDynamicTable(t, d) {
+            const c = document.getElementById(t + 'Container');
+            // Unified Card Layout for all dynamic sections
+            if (['ninpo', 'background', 'person', 'tool', 'ougi'].includes(t)) {
+                c.innerHTML = `<div class="card-grid" id="tbody-${t}"></div>`;
+                const container = document.getElementById(`tbody-${t}`);
+                d.forEach((r, i) => {
+                    let html = '';
+                    if (t === 'ninpo') html = createNinpoCardHTML(r, i);
+                    else if (t === 'background') html = createBackgroundCardHTML(r, i);
+                    else if (t === 'person') html = createPersonCardHTML(r, i);
+                    else if (t === 'tool') html = createToolCardHTML(r, i);
+                    else if (t === 'ougi') html = createOugiCardHTML(r, i);
+                    container.insertAdjacentHTML('beforeend', html);
+                });
+            } else {
+                let h = `<div class="dynamic-table-container"><table><tbody id="tbody-${t}">`;
+                d.forEach((r, i) => h += createRowHTML(t, r, i));
+                h += `</tbody></table></div>`;
+                c.innerHTML = h;
+            }
+        }
+
+        // --- Card Creators ---
+
+        function createNinpoCardHTML(r = {}, i) {
+            const v = (k) => r[k] || '';
+            const typeOptions = ['攻撃', 'サポート', '装備'];
+            let typeSelect = `<select class="dyn-input card-select" data-key="type">`;
+            typeOptions.forEach(op => {
+                typeSelect += `<option value="${op}" ${v('type') === op ? 'selected' : ''}>${op}</option>`;
+            });
+            typeSelect += `</select>`;
+
+            return `
+             <div class="item-card dynamic-row" data-idx="${i}">
+                <button type="button" class="item-delete edit-only" onclick="this.closest('.item-card').remove()">×</button>
+                <div class="card-header">
+                    <div style="flex-grow:1; margin-right:1rem;">
+                        <input type="text" class="dyn-input card-title-input" data-key="name" value="${v('name')}" placeholder="忍法名">
+                    </div>
+                    <div class="card-meta">
+                        <span style="display:inline-block;">コスト:<input type="text" class="dyn-input" data-key="cost" value="${v('cost')}" style="width:40px; background:transparent; border:none; color:#ccc; text-align:center;"></span>
+                        | 
+                        <span style="display:inline-block;">間合:<input type="text" class="dyn-input" data-key="gap" value="${v('gap')}" style="width:40px; background:transparent; border:none; color:#ccc; text-align:center;"></span>
+                    </div>
+                </div>
+                <div class="card-body">
+                    <div class="card-row">
+                        <span class="card-label">タイプ:</span>
+                        <div style="flex-grow:1;">${typeSelect}</div>
+                    </div>
+                    <div class="card-row">
+                        <span class="card-label">指定特技:</span>
+                        <input type="text" class="dyn-input card-input" data-key="designated_skill" value="${v('designated_skill')}" placeholder="指定特技">
+                    </div>
+                    <div class="card-row">
+                         <span class="card-label" style="align-self:flex-start; margin-top:5px;">効果:</span>
+                         <textarea class="dyn-input card-textarea" data-key="effect" placeholder="効果">${v('effect')}</textarea>
+                    </div>
+                    <div class="card-row">
+                        <span class="card-label">参照:</span>
+                        <input type="text" class="dyn-input card-input" data-key="page" value="${v('page')}" placeholder="参照p">
+                    </div>
+                </div>
+             </div>`;
+        }
+
+        function createBackgroundCardHTML(r = {}, i) {
+            const v = (k) => r[k] || '';
+            const typeOptions = ['長所', '弱点'];
+            let typeSelect = `<select class="dyn-input card-select" data-key="type">`;
+            typeOptions.forEach(op => typeSelect += `<option value="${op}" ${v('type') === op ? 'selected' : ''}>${op}</option>`);
+            typeSelect += `</select>`;
+
+            return `
+            <div class="item-card dynamic-row" data-idx="${i}">
+               <button type="button" class="item-delete edit-only" onclick="this.closest('.item-card').remove()">×</button>
+               <div class="card-body">
+                   <div class="card-row">
+                       <input type="text" class="dyn-input card-input" data-key="name" value="${v('name')}" placeholder="背景名" style="font-weight:bold; width:40%;">
+                       <div style="width:30%; margin-left:10px;">${typeSelect}</div>
+                       <input type="text" class="dyn-input card-input" data-key="merit" value="${v('merit')}" placeholder="功績点" style="width:25%; margin-left:10px; text-align:right;">
+                   </div>
+                   <div class="card-row">
+                        <textarea class="dyn-input card-textarea" data-key="effect" placeholder="効果">${v('effect')}</textarea>
+                   </div>
+                   <div class="card-row">
+                       <input type="text" class="dyn-input card-input" data-key="page" value="${v('page')}" placeholder="参照p">
+                   </div>
+               </div>
+            </div>`;
+        }
+
+        function createPersonCardHTML(r = {}, i) {
+            const v = (k) => r[k] || '';
+            const loc = r['location'] === 'true' ? 'checked' : '';
+            const sec = r['secret'] === 'true' ? 'checked' : '';
+            const ougi = r['ougi'] === 'true' ? 'checked' : '';
+
+            let emoType = `<select class="dyn-input card-select" data-key="emotion_type" onchange="updateEmotionOptions(this)">`;
+            ['+', '-'].forEach(op => emoType += `<option value="${op}" ${v('emotion_type') === op ? 'selected' : ''}>${op}</option>`);
+            emoType += `</select>`;
+
+            const currentEmotionType = v('emotion_type') || '+';
+            let emoSelect = `<select class="dyn-input card-select" data-key="emotion">`;
+            EMOTIONS[currentEmotionType].forEach(op => emoSelect += `<option value="${op}" ${v('emotion') === op ? 'selected' : ''}>${op}</option>`);
+            emoSelect += `</select>`;
+
+            return `
+            <div class="item-card dynamic-row" data-idx="${i}">
+               <button type="button" class="item-delete edit-only" onclick="this.closest('.item-card').remove()">×</button>
+               <div class="card-body">
+                   <div class="card-row">
+                       <input type="text" class="dyn-input card-input" data-key="name" value="${v('name') === 'none' ? '' : v('name')}" placeholder="人物名" style="font-weight:bold; width:100%;">
+                   </div>
+                   <div class="card-row" style="justify-content: flex-start; gap: 1rem;">
+                        <label style="font-size:0.8rem; color:#adb5bd; cursor:pointer;"><input type="checkbox" class="dyn-input" data-key="location" ${loc}> 居所</label>
+                        <label style="font-size:0.8rem; color:#adb5bd; cursor:pointer;"><input type="checkbox" class="dyn-input" data-key="secret" ${sec}> 秘密</label>
+                        <label style="font-size:0.8rem; color:#adb5bd; cursor:pointer;"><input type="checkbox" class="dyn-input" data-key="ougi" ${ougi}> 奥義</label>
+                   </div>
+                   <div class="card-row">
+                        <div style="width:15%;">${emoType}</div>
+                        <div style="width:30%; margin-left:5px;">${emoSelect}</div>
+                        <input type="text" class="dyn-input card-input" data-key="note" value="${v('note')}" placeholder="備考" style="width:50%; margin-left:5px;">
+                   </div>
+               </div>
+            </div>`;
+        }
+
+        function createToolCardHTML(r = {}, i) {
+            const v = (k) => r[k] || '';
+            return `
+            <div class="item-card dynamic-row" data-idx="${i}">
+               <button type="button" class="item-delete edit-only" onclick="this.closest('.item-card').remove()">×</button>
+               <div class="card-body">
+                   <div class="card-row">
+                       <input type="text" class="dyn-input card-input" data-key="name" value="${v('name')}" placeholder="忍具名" style="font-weight:bold; width:100%;">
+                   </div>
+                   <div class="card-row">
+                       <input type="text" class="dyn-input card-input" data-key="Quantity" value="${v('Quantity')}" placeholder="個数" style="width:45%;">
+                       <input type="text" class="dyn-input card-input" data-key="MeritPoints" value="${v('MeritPoints')}" placeholder="功績点" style="width:45%; margin-left:10%;">
+                   </div>
+                   <div class="card-row">
+                        <textarea class="dyn-input card-textarea" data-key="effect" placeholder="効果">${v('effect')}</textarea>
+                   </div>
+               </div>
+            </div>`;
+        }
+
+        function createOugiCardHTML(r = {}, i) {
+            const v = (k) => r[k] || '';
+            return `
+            <div class="item-card dynamic-row" data-idx="${i}">
+               <button type="button" class="item-delete edit-only" onclick="this.closest('.item-card').remove()">×</button>
+               <div class="card-body">
+                   <div class="card-row">
+                       <span class="card-label">奥義名:</span>
+                       <input type="text" class="dyn-input card-input" data-key="name" value="${v('name')}" placeholder="奥義名" style="font-weight:bold; width:100%;">
+                   </div>
+                   <div class="card-row">
+                       <span class="card-label">指定特技:</span>
+                       <input type="text" class="dyn-input card-input" data-key="designated_skill" value="${v('designated_skill') || ''}" placeholder="指定特技">
+                   </div>
+                   <div class="card-row">
+                       <span class="card-label">強み弱み:</span>
+                       <input type="text" class="dyn-input card-input" data-key="type" value="${v('type')}" placeholder="効果/強み/弱み">
+                   </div>
+                   <div class="card-row">
+                        <span class="card-label" style="align-self:flex-start; margin-top:5px;">演出:</span>
+                        <textarea class="dyn-input card-textarea" data-key="effect" placeholder="演出">${v('effect')}</textarea>
+                   </div>
+               </div>
+            </div>`;
+        }
+
+        function createRowHTML(t, r = {}, i) { const s = DYNAMIC_SCHEMAS[t]; let h = `< tr class="dynamic-row" data - idx="${i}" > `; s.forEach(f => { const v = r[f.key] || ''; h += ` < td width = "${f.width}" > `; if (f.key === 'effect') { h += ` < textarea class="dyn-input" data - key="${f.key}" placeholder = "${f.placeholder}" rows = "2" > ${v}</textarea > ` } else if (f.type === 'checkbox') { const k = r[f.key] === 'true' ? 'checked' : ''; h += ` < label style = "font-size:0.8rem; cursor:pointer;" > <input type="checkbox" class="dyn-input" data-key="${f.key}" ${k}><br>${f.placeholder}</label>` } else if (f.options) { let o = f.options; if (f.key === 'emotion') { const ct = r['emotion_type'] || '+'; o = EMOTIONS[ct] } const oc = f.onchange ? `onchange="${f.onchange}"` : ''; h += `<select class="dyn-input" data-key="${f.key}" ${oc}>`; o.forEach(op => { const sl = v === op ? 'selected' : ''; h += `<option value="${op}" ${sl}>${op}</option>` }); h += `</select>` } else { h += `<input type="text" class="dyn-input" data-key="${f.key}" value="${v}" placeholder="${f.placeholder}">` } h += `</td>` }); h += ` < td width = "5%" class="edit-only" > <button type="button" class="btn-sm btn-danger" onclick="this.closest('.dynamic-row').remove()">×</button></td ></tr > `; return h }
+
+        window.addDynamicRow = t => {
+            let b = document.getElementById(`tbody-${t}`);
+            // If the container doesn't exist, initialize it
+            if (!b) {
+                const container = document.getElementById(`${t}Container`);
+                if (container) {
+                    container.innerHTML = `<div class="card-grid" id="tbody-${t}"></div>`;
+                    b = document.getElementById(`tbody-${t}`);
+                }
+            }
+            if (!b) return; // Safety check
+
+            if (['ninpo', 'background', 'person', 'tool', 'ougi'].includes(t)) {
+                let html = '';
+                const len = b.children.length;
+                if (t === 'ninpo') html = createNinpoCardHTML({}, len);
+                else if (t === 'background') html = createBackgroundCardHTML({}, len);
+                else if (t === 'person') html = createPersonCardHTML({}, len);
+                else if (t === 'tool') html = createToolCardHTML({}, len);
+                else if (t === 'ougi') html = createOugiCardHTML({}, len);
+
+                b.insertAdjacentHTML('beforeend', html);
+
+                if (currentMode === 'view') {
+                    const newCard = b.lastElementChild;
+                    newCard.querySelectorAll('.edit-only').forEach(e => e.style.display = 'none');
+                    newCard.querySelectorAll('.card-input, .card-select, .card-textarea, input[type="checkbox"]').forEach(e => e.disabled = true);
+                }
+            } else {
+                b.insertAdjacentHTML('beforeend', createRowHTML(t, {}, b.children.length));
+            }
+        };
+
+        window.updateEmotionOptions = s => { const r = s.closest('.dynamic-row'), t = s.value, e = r.querySelector('.dyn-input[data-key="emotion"]'); if (e) { let h = ''; EMOTIONS[t].forEach(o => h += `< option value = "${o}" > ${o}</option > `); e.innerHTML = h } };
+
+        function getDynamicData(t) {
+            const b = document.getElementById(`tbody-${t}`);
+            const R = [];
+            // Use .dynamic-row class to match both tr and div.ninpo-card
+            const rows = b.getElementsByClassName('dynamic-row');
+            Array.from(rows).forEach(r => {
+                const d = {};
+                r.querySelectorAll('.dyn-input').forEach(i => {
+                    if (i.type === 'checkbox') d[i.dataset.key] = i.checked ? 'true' : 'false';
+                    else d[i.dataset.key] = i.value
+                });
+                R.push(d)
+            });
+            return R
+        }
         const dz = document.getElementById('dropZone'), ii = document.getElementById('imgInput'); dz.addEventListener('click', () => ii.click()); dz.addEventListener('dragover', e => { e.preventDefault(); dz.classList.add('dragover') }); dz.addEventListener('dragleave', () => dz.classList.remove('dragover')); dz.addEventListener('drop', e => { e.preventDefault(); dz.classList.remove('dragover'); if (e.dataTransfer.files.length) { ii.files = e.dataTransfer.files; handleImage(e.dataTransfer.files[0]) } }); ii.addEventListener('change', e => { if (e.target.files[0]) handleImage(e.target.files[0]) });
         function handleImage(f) { const r = new FileReader(); r.onload = ev => { const i = new Image(); i.onload = () => { const c = document.createElement('canvas'), M = 300; let w = i.width, h = i.height; if (w > h) { if (w > M) { h *= M / w; w = M } } else { if (h > M) { w *= M / h; h = M } } c.width = w; c.height = h; c.getContext('2d').drawImage(i, 0, 0, w, h); document.getElementById('charImage').src = c.toDataURL('image/png'); document.getElementById('charImage').style.display = 'block'; document.getElementById('deleteImageBtn').style.display = 'block' }; i.src = ev.target.result }; r.readAsDataURL(f) }
         function showToast(m) { const t = document.getElementById('toastNotification'); t.textContent = m; t.classList.add('show'); setTimeout(() => t.classList.remove('show'), 3000) }
