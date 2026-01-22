@@ -860,6 +860,158 @@
             display: none !important;
         }
 
+        /* 特技グリッドのセルスタイル - 特技名を1行で表示 */
+        #skillGridBody td {
+            white-space: nowrap;
+            padding: 0.3rem 0.4rem;
+            min-width: 55px;
+            font-size: 0.8rem;
+            text-align: center;
+        }
+
+        #skillGrid {
+            table-layout: fixed;
+            width: 100%;
+        }
+
+        #skillGrid th {
+            font-size: 0.8rem;
+            padding: 0.3rem 0.2rem;
+            text-align: center;
+        }
+
+        /* スペシャル/ファンブル/修正値 UI */
+        .judgment-params {
+            display: flex;
+            gap: 1.5rem;
+            margin-bottom: 1rem;
+            padding: 0.8rem 1rem;
+            background: #2a2f35;
+            border-radius: 8px;
+            border: 1px solid var(--border);
+        }
+
+        .judgment-params .param-group {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .judgment-params label {
+            font-size: 0.85rem;
+            color: #adb5bd;
+            font-weight: 500;
+        }
+
+        .judgment-params input[type="number"] {
+            width: 55px;
+            padding: 0.3rem 0.4rem;
+            border-radius: 4px;
+            border: 1px solid #6c757d;
+            background-color: #495057;
+            color: #fff;
+            font-size: 0.9rem;
+            text-align: center;
+        }
+
+        /* 判定特技表示 */
+        .judgment-skill-display {
+            display: flex;
+            align-items: center;
+            gap: 0.8rem;
+            margin-bottom: 0.8rem;
+            padding: 0.5rem 0;
+        }
+
+        .judgment-skill-display .label {
+            font-size: 0.85rem;
+            color: #c02d47;
+            font-weight: 600;
+            white-space: nowrap;
+        }
+
+        .judgment-skill-display input[type="text"] {
+            flex: 1;
+            max-width: 200px;
+            padding: 0.4rem 0.6rem;
+            border-radius: 4px;
+            border: 1px solid #6c757d;
+            background-color: #495057;
+            color: #fff;
+            font-size: 0.9rem;
+        }
+
+        .judgment-skill-display label {
+            font-size: 0.8rem;
+            color: #adb5bd;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 0.3rem;
+        }
+
+        /* 判定種別ラジオボタン */
+        .judgment-type-radios {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0.3rem 1rem;
+            margin-bottom: 1rem;
+            padding: 0.5rem 0;
+        }
+
+        .judgment-type-radios label {
+            font-size: 0.85rem;
+            color: #adb5bd;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 0.3rem;
+            padding: 0.3rem 0.6rem;
+            border-radius: 4px;
+            transition: background-color 0.2s;
+        }
+
+        .judgment-type-radios label:hover {
+            background-color: rgba(255, 255, 255, 0.1);
+        }
+
+        .judgment-type-radios input[type="radio"]:checked+span,
+        .judgment-type-radios label:has(input[type="radio"]:checked) {
+            color: #fff;
+            background-color: rgba(192, 45, 71, 0.3);
+        }
+
+        /* 習得特技テーブル改善 */
+        #acquiredSkillsTable {
+            font-size: 0.85rem;
+        }
+
+        #acquiredSkillsTable th {
+            font-size: 0.8rem;
+            padding: 0.4rem;
+            background: #212529;
+        }
+
+        #acquiredSkillsTable td {
+            padding: 0.3rem 0.4rem;
+            font-size: 0.8rem;
+        }
+
+        .skill-tn {
+            color: #6cf;
+            font-weight: 500;
+        }
+
+        .skill-formula {
+            font-size: 0.75rem;
+            color: #ccc;
+        }
+
+        .skill-formula.highlight {
+            color: #ff4444;
+            font-weight: bold;
+        }
+
         @media (max-width: 700px) {
 
             .col-4,
@@ -880,6 +1032,10 @@
         }
     </style>
 </head>
+
+
+
+
 
 <body>
 
@@ -963,7 +1119,7 @@
             <div
                 style="text-align: right; margin-bottom: 1rem; display: flex; justify-content: flex-end; align-items: center; gap: 15px;">
                 <label style="font-size: 0.9rem; cursor: pointer; user-select: none;">
-                    <input type="checkbox" id="copyConfirmSetting"> コピー時に確認
+                    <input type="checkbox" id="copyConfirmSetting">
                 </label>
                 <button id="createNewBtn">新規作成</button>
             </div>
@@ -1063,6 +1219,40 @@
                         <label style="margin-left:1rem;"><input type="radio" name="mode" value="judgment"> 判定</label>
                         <span style="float:right; color:#aaa; font-size:0.8rem;">A-Eをクリックでギャップ閉鎖</span>
                     </div>
+
+                    <!-- スペシャル/ファンブル/修正値 UI -->
+                    <div class="judgment-params">
+                        <div class="param-group">
+                            <label>スペシャル</label>
+                            <input type="number" id="specialValue" value="6" min="1" max="12">
+                        </div>
+                        <div class="param-group">
+                            <label>ファンブル</label>
+                            <input type="number" id="fumbleValue" value="2" min="1" max="12">
+                        </div>
+                        <div class="param-group">
+                            <label>修正値</label>
+                            <input type="number" id="modifierValue" value="0" min="-10" max="10">
+                        </div>
+                    </div>
+
+                    <!-- 判定特技表示 -->
+                    <div class="judgment-skill-display">
+                        <span class="label">判定特技</span>
+                        <input type="text" id="judgmentSkillName" readonly placeholder="特技を選択">
+                        <label><input type="checkbox" id="autoCopy"> 自動でコピー</label>
+                    </div>
+
+                    <!-- 判定種別ラジオボタン -->
+                    <div class="judgment-type-radios">
+                        <label><input type="radio" name="judgmentType" value="normal" checked>(通常)</label>
+                        <label><input type="radio" name="judgmentType" value="info">情報</label>
+                        <label><input type="radio" name="judgmentType" value="emotion">感情</label>
+                        <label><input type="radio" name="judgmentType" value="recovery">回復</label>
+                        <label><input type="radio" name="judgmentType" value="ougiBreak">奥義破り</label>
+                        <label><input type="radio" name="judgmentType" value="evade">回避</label>
+                    </div>
+
                     <div class="skill-container">
                         <div class="skill-grid-wrapper">
                             <table id="skillGrid">
@@ -1088,7 +1278,10 @@
                             <table id="acquiredSkillsTable">
                                 <thead>
                                     <tr>
-                                        <th>習得特技 / 判定</th>
+                                        <th>修得特技</th>
+                                        <th>目標値</th>
+                                        <th>判定式</th>
+                                        <th>隠</th>
                                     </tr>
                                 </thead>
                                 <tbody id="acquiredSkillsList"></tbody>
@@ -1096,6 +1289,7 @@
                         </div>
                     </div>
                 </div>
+
 
                 <!-- Ninpo -->
                 <div class="card">
@@ -1808,16 +2002,51 @@ OTS　【数奇】
             }
         }
 
-        function addSkillToList(s) { const l = document.getElementById('acquiredSkillsList'); if (document.getElementById('row-' + s)) return; const t = document.createElement('tr'); t.id = 'row-' + s; t.innerHTML = `<td style="display:flex; justify-content:space-between;"><span>${s}</span><span class="judgment-result"></span></td>`; l.appendChild(t) }
+        function addSkillToList(s) {
+            const l = document.getElementById('acquiredSkillsList');
+            if (document.getElementById('row-' + s)) return;
+            const t = document.createElement('tr');
+            t.id = 'row-' + s;
+            t.innerHTML = `
+                <td>《${s}》</td>
+                <td class="skill-tn" data-tn="">-</td>
+                <td class="skill-formula" data-formula=""></td>
+                <td><input type="checkbox" class="skill-hide-check" title="隠す"></td>
+            `;
+            l.appendChild(t);
+        }
         function removeSkillFromList(s) { const r = document.getElementById('row-' + s); if (r) r.remove() }
 
-        // 修正された判定ロジック: 全習得特技に対して計算し、最小値のみ赤色表示
+
+
+        // 判定種別のラベルマップ
+        const JUDGMENT_TYPE_LABELS = {
+            'normal': '',
+            'info': '情報',
+            'emotion': '感情',
+            'recovery': '回復',
+            'ougiBreak': '奥義破り',
+            'evade': '回避'
+        };
+
+        // 修正された判定ロジック: 全習得特技に対して計算し、スペシャル/修正値/判定種別を反映
         function performJudgment(targetX, targetY, targetName) {
             document.querySelectorAll('.judging').forEach(e => e.classList.remove('judging'));
-            document.querySelectorAll('.judgment-result').forEach(e => { e.textContent = ''; e.style.color = ''; e.style.fontWeight = ''; });
+
+            // 判定特技表示欄に特技名をセット
+            const judgmentSkillInput = document.getElementById('judgmentSkillName');
+            if (judgmentSkillInput) {
+                judgmentSkillInput.value = `《${targetName}》`;
+            }
 
             const targetCell = document.querySelector(`td[data-skill="${targetName}"]`);
             if (targetCell) targetCell.classList.add('judging');
+
+            // パラメータを取得
+            const specialValue = parseInt(document.getElementById('specialValue').value) || 6;
+            const modifierValue = parseInt(document.getElementById('modifierValue').value) || 0;
+            const judgmentType = document.querySelector('input[name="judgmentType"]:checked')?.value || 'normal';
+            const judgmentTypeLabel = JUDGMENT_TYPE_LABELS[judgmentType];
 
             if (acquiredSkills.size === 0) return;
 
@@ -1848,31 +2077,66 @@ OTS　【数奇】
             });
 
             results.forEach(res => {
-                const row = document.querySelector(`#row-${res.name} .judgment-result`);
+                const row = document.getElementById('row-' + res.name);
                 if (row) {
-                    const targetVal = 5 + res.cost;
+                    const tnCell = row.querySelector('.skill-tn');
+                    const formulaCell = row.querySelector('.skill-formula');
 
-                    // 表示テキストの組み立て（修正点）
-                    let text = `2D6>=${targetVal}`;
-                    if (res.name === targetName) {
-                        text += ` （判定：${targetName}）`;
-                    } else {
-                        text += ` （${targetName} 代用判定：${res.name}）`;
+                    const baseTn = 5 + res.cost;
+                    const adjustedTn = baseTn - modifierValue; // 修正値を反映
+
+                    // 目標値を表示（最小コストの場合は☆マーク）
+                    if (tnCell) {
+                        tnCell.textContent = (res.cost === minCost ? '☆' : '') + adjustedTn;
                     }
 
-                    row.textContent = text;
+                    // 判定式を組み立て
+                    if (formulaCell) {
+                        let formula = `SG@${specialValue}>=${adjustedTn}`;
 
-                    // 最小値のみ赤色強調
-                    if (res.cost === minCost) {
-                        row.style.color = '#ff4444';
-                        row.style.fontWeight = 'bold';
-                    } else {
-                        row.style.color = '#888';
-                        row.style.fontWeight = 'normal';
+                        if (res.name === targetName) {
+                            formula += ` (判定：《${res.name}》)`;
+                        } else {
+                            formula += ` (判定：《${res.name}》→《${targetName}》)`;
+                        }
+
+                        // 判定種別が通常以外の場合、【○○判定】を追加
+                        if (judgmentTypeLabel) {
+                            formula += `【${judgmentTypeLabel}判定】`;
+                        }
+
+                        formulaCell.textContent = formula;
+                        formulaCell.dataset.formula = formula;
+
+                        // 最小値のみ赤色強調
+                        if (res.cost === minCost) {
+                            formulaCell.classList.add('highlight');
+                        } else {
+                            formulaCell.classList.remove('highlight');
+                        }
                     }
                 }
             });
+
+            // 自動コピー機能
+            const autoCopyCheck = document.getElementById('autoCopy');
+            if (autoCopyCheck && autoCopyCheck.checked) {
+                // 最小コストの判定式をクリップボードにコピー
+                const bestResult = results.find(r => r.cost === minCost);
+                if (bestResult) {
+                    const bestRow = document.getElementById('row-' + bestResult.name);
+                    if (bestRow) {
+                        const formula = bestRow.querySelector('.skill-formula')?.dataset.formula;
+                        if (formula) {
+                            navigator.clipboard.writeText(formula).then(() => {
+                                showToast('判定式をコピーしました');
+                            });
+                        }
+                    }
+                }
+            }
         }
+
 
         function renderDynamicTable(t, d) {
             const c = document.getElementById(t + 'Container');
