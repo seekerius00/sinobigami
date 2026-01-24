@@ -1072,6 +1072,10 @@
                 align-items: flex-start;
                 gap: 0.5rem;
             }
+            /* 追加：判定ボタンの左余白を強制的にゼロにする */
+            .skill-controls label {
+                margin-left: 0 !important;
+            }
 
             .skill-controls span[style*="float:right"] {
                 float: none !important;
@@ -1329,8 +1333,8 @@
                     <h2>特技</h2>
                     <div class="skill-controls">
                         <label><input type="radio" name="mode" value="setting" checked> 設定（習得）</label>
-                        <label style="margin-left:1rem;"><input type="radio" name="mode" value="judgment"> 判定</label>
-                        <span style="float:right; color:#aaa; font-size:0.8rem;">A-Eをクリックでギャップ閉鎖</span>
+                        <label><input type="radio" name="mode" value="judgment"> 判定</label>
+                        <span class="skill-help-text">A-Eをクリックでギャップ閉鎖</span>
                     </div>
 
                     <!-- スペシャル/ファンブル/修正値 UI -->
